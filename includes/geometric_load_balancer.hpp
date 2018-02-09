@@ -182,7 +182,7 @@ namespace load_balancing {
                                                                   const std::vector<partitioning::geometric::Domain<N>> &domains) override
             {
                 // Get the neighbors
-                auto neighbors = partitioning::utils::unzip(partitioning::geometric::get_neighboring_domains(this->caller_rank, domains, 0.007)).first;
+                auto neighbors = partitioning::utils::unzip(partitioning::geometric::get_neighboring_domains(this->caller_rank, domains, 0.0007)).first;
                 std::sort(neighbors.begin(), neighbors.end());
                 //std::cout << to_string(domains.at(caller_rank)) << " " << neighbors.size() << std::endl;
                 //std::cout << to_string(domains.at(caller_rank)) << " "<< neighbors.size() << std::endl;
