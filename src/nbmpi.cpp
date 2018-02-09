@@ -54,12 +54,14 @@ void init_particles_random_v(int n, std::vector<float>& v, sim_param_t* params) 
     }
 }
 template <int N>
-void init_particles_random_v(std::vector<elements::Element<N>> &elements, sim_param_t* params) {
+void init_particles_random_v(std::vector<elements::Element<N>> &elements, sim_param_t* params, int seed=0) {
     float T0 = params->T0;
     int n = elements.size();
+    std::mt19937 gen(seed);
+    std::uniform_real_distribution udist(0.0,1.0);
     for (int i = 0; i < n; ++i) {
-        double R = T0 * std::sqrt(-2 * std::log(drand48()));
-        double T = 2 * M_PI * drand48();
+        double R = T0 * std::sqrt(-2 * std::log(udist(gen)));
+        double T = 2 * M_PI * udist(gen);
         elements[i].velocity[0] = (double) (R * std::cos(T));
         elements[i].velocity[1] = (double) (R * std::sin(T));
     }
