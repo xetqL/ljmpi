@@ -319,7 +319,7 @@ int main(int argc, char** argv) {
         fp = fopen(params.fname, "w");
         double min_r2 = 1e-2*1e-2;
         std::random_device rd; //Will be used to obtain a seed for the random number engine
-        std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+        std::mt19937 gen(0); //Standard mersenne_twister_engine seeded with rd()
         std::normal_distribution<double> ndist(params.simsize / 2, params.simsize / 10);
         std::uniform_real_distribution<double> udist(0.0, params.simsize);
 
