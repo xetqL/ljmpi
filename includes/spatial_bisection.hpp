@@ -80,8 +80,7 @@ namespace partitioning { namespace geometric {
     }
 
     template<size_t N=2>
-    const bool are_domain_neighbors(const Domain<N> &A, const Domain<N> &B, const double min_d2){
-
+    const double domain_distance(const Domain<N> &A, const Domain<N> &B){
         bool left   = B.at(0).second < A.at(0).first;
         bool right  = A.at(0).second < B.at(0).first;
         bool bottom = B.at(1).second < A.at(1).first;
@@ -97,15 +96,20 @@ namespace partitioning { namespace geometric {
         else if (right && top)
             d2 = dist2(std::make_pair(A.at(0).second, A.at(1).second), std::make_pair(B.at(0).first, B.at(1).first) );
         else if (left)
-            d2 = A.at(0).first - B.at(0).second;
+            d2 = std::pow(A.at(0).first - B.at(0).second, 2);
         else if (right)
-            d2 = B.at(0).first - A.at(0).second;
+            d2 = std::pow(B.at(0).first - A.at(0).second, 2);
         else if (bottom)
-            d2 = A.at(1).first - B.at(1).second;
+            d2 = std::pow(A.at(1).first - B.at(1).second, 2);
         else if (top)
-            d2 = B.at(1).first - A.at(1).second;
+            d2 = std::pow(B.at(1).first - A.at(1).second, 2);
 
+        return d2;
+    }
 
+    template<size_t N=2>
+    const bool are_domain_neighbors(const Domain<N> &A, const Domain<N> &B, const double min_d2){
+        double d2 = domain_distance<N>(A, B);
         return d2 <= min_d2;
     }
 

@@ -11,6 +11,7 @@
 #include <map>
 
 #include "physics.hpp"
+#include "params.hpp"
 namespace lennard_jones {
 template<typename RealType>
 void create_cell_linkedlist(

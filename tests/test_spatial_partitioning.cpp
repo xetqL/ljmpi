@@ -4,6 +4,7 @@
 #include <cppcheck/cppcheck.hpp>
 #include <random>
 #include <map>
+#include <unordered_map>
 
 #include "../includes/spatial_bisection.hpp"
 using namespace partitioning::geometric;
@@ -108,7 +109,7 @@ int main(int argc, char** argv){
                 std::generate(pos.begin(), pos.end(), [=] () mutable {return (dist(gen)+1)*100.0;});
                 std::generate(vel.begin(), vel.end(), [=] () mutable {return (dist(gen)+1)*100.0;});
                 elements::transform<2>(points, &pos.front(), &vel.front());
-                
+
                 return points;
 
             }, [] (std::vector<elements::Element<2>> elements){
@@ -174,7 +175,7 @@ int main(int argc, char** argv){
                 return std::all_of(elements.begin(), elements.end(), [](auto el) {
                     return std::all_of(el.position.begin(), el.position.end(), [](auto p){ return p >= 1.0;}) &&
                            std::all_of(el.velocity.begin(), el.velocity.end(), [](auto v){ return v >= 1.0;
-                    });
+                           });
                 });
             });
 
@@ -217,7 +218,6 @@ int main(int argc, char** argv){
                 auto partitions = partitioner.partition_data(points, domain_boundary, 128);
 
                 std::vector<partitioning::geometric::Domain<2> > d = partitions->domains;
-                std::for_each(d.begin(), d.end(), [](auto const& el){std::cout << to_string(el) << std::endl;});
                 return d;
             }, [](auto const& subdomains) {
                 for(size_t i = 0; i < subdomains.size(); ++i){
@@ -267,55 +267,52 @@ int main(int argc, char** argv){
                 return true;
             });
 
-    auto are_domain_neighbors = std::make_shared<UnitTest< std::vector<bool> > >
+    auto are_domain_neighbors = std::make_shared<UnitTest< bool > >
             ("Domain neighboring detection", [] {
+                SeqSpatialBisection<2> partitioner;
+
+                std::array<std::pair<double ,double>, 2> domain_boundary = {
+                        std::make_pair(0.0, std::sqrt(8)),
+                        std::make_pair(0.0, std::sqrt(8))
+                };
+
+                //std::random_device rd; //Will be used to obtain a seed for the random number engine
+                std::mt19937 gen(0); //Standard mersenne_twister_engine seeded with rd()
+                std::uniform_real_distribution<double> dist(0.0, std::sqrt(8));
+                std::vector<elements::Element<2>> points;
+                for (unsigned int i = 0; i < 5000; ++i) {
+                    points.push_back(elements::Element<2>::create_random(dist, gen, i));
+                }
+                auto part = partitioner.partition_data(points, domain_boundary, 64);
+                std::vector<Domain<2>> domains = part->domains;
+                //std::unordered_map<Domain<2>, std::shared_ptr<std::unordered_map<Domain<2>, double>>> distance_matrix;
+
+                for (auto &d1 : domains){
+
+                    for(auto &d2 : domains){
+                        std::cout << to_string(d1) <<" & "<<to_string(d2)<<" -> " << std::sqrt(partitioning::geometric::domain_distance(d1,d2)) << std::endl;
+                    }
+
+                }
+                return true;
+
+            }, [](auto const& neighbors) {
+                return true;
+            });
+/*
+    auto distance2_line_to_el = std::make_shared<UnitTest< double > >
+            ("Dist line to element", [] {
                 std::vector<Domain<2>> domains = {
-                        {std::make_pair(0.25, 0.5), std::make_pair(0.25, 0.5)}, // 0
-                        {std::make_pair(0.5, 1.0),  std::make_pair(0.45, 1.0)}, // 1
-                        {std::make_pair(0.25, 0.5), std::make_pair(2.5, 3.0)},  // 2
-                        {std::make_pair(0.25, 0.5), std::make_pair(0.5, 1.0)},  // 3
-                        {std::make_pair(0.0, 1.0), std::make_pair(0.0, 1.0)},   // 4
-                        {std::make_pair(1.0, 2.0), std::make_pair(1.0, 2.0)},   // 5
-                        {std::make_pair(1.0, 2.0), std::make_pair(2.0, 2.5)},   // 6
-                        {std::make_pair(0.0, 3.0), std::make_pair(2.5, 3.0)},   // 7
-                        {std::make_pair(0.0, 3.0), std::make_pair(2.6, 3.0)},   // 8
-
-
+                        {std::make_pair(0.2, 0.5), std::make_pair(0.2, 0.5)}, // 0
                 };
-                std::vector<bool> neighbors = {
-                        partitioning::geometric::are_domain_neighbors(domains.at(4), domains.at(5)),
-                        partitioning::geometric::are_domain_neighbors(domains.at(5), domains.at(6)),
-                        partitioning::geometric::are_domain_neighbors(domains.at(6), domains.at(7)),
-                        partitioning::geometric::are_domain_neighbors(domains.at(7), domains.at(6)),
-                        partitioning::geometric::are_domain_neighbors(domains.at(0), domains.at(1)),
-                        partitioning::geometric::are_domain_neighbors(domains.at(1), domains.at(0)),
-                        partitioning::geometric::are_domain_neighbors(domains.at(3), domains.at(0)),
-                        !partitioning::geometric::are_domain_neighbors(domains.at(2), domains.at(1)),
-                        !partitioning::geometric::are_domain_neighbors(domains.at(2), domains.at(0)),
-                        !partitioning::geometric::are_domain_neighbors(domains.at(0), domains.at(2)),
-                        !partitioning::geometric::are_domain_neighbors(domains.at(1), domains.at(2)),
-                        !partitioning::geometric::are_domain_neighbors(domains.at(4), domains.at(6)),
-                        !partitioning::geometric::are_domain_neighbors(domains.at(6), domains.at(8)),
-
-                };
-                return neighbors;
-            }, [](auto const& neighbors) {
-                return std::all_of(neighbors.begin(), neighbors.end(), [](auto v){return v == true;});
+                std::array<double, 2> p = {0.3, 0.8}, v= {0.0, 0.0};
+                elements::Element<2> e = elements::Element<2>::create(p, v, 0);
+                return elements::distance2<2>(domains.at(0), e);
+            }, [](auto const& d2) {
+                std::cout << d2 << std::endl;
+                return d2 == std::pow(0.8 - 0.5, 2);
             });
-
-    auto get_domain_neighbors = std::make_shared<UnitTest< std::vector<std::pair<size_t, Domain<2>>> > >
-            ("Domain neighboring detection", [] {
-                const std::vector<Domain<2>> domains = {
-                        {std::make_pair(0.25, 0.5), std::make_pair(0.25, 0.5)}, // neighbor with 2
-                        {std::make_pair(0.5, 1.0),  std::make_pair(0.45, 1.0)}, // neighbor with 1
-                        {std::make_pair(1.0, 5.0),  std::make_pair(2.0, 3.0)},  // no neighbor
-                        {std::make_pair(0.25, 0.5), std::make_pair(0.5, 1.0)},  // neighbor with 1 and 2
-                };
-                return get_neighboring_domains<2>(0, domains);
-            }, [](auto const& neighbors) {
-                return neighbors.size() == 2 && neighbors.at(0).first == 1 && neighbors.at(1).first == 3;
-            });
-
+*/
     runner.add_test(test_partition_balanced);
     runner.add_test(total_area_is_area_of_initial_domain);
     runner.add_test(no_overlapping_region);
@@ -327,7 +324,7 @@ int main(int argc, char** argv){
     runner.add_test(create_random_elements_generic_arr_with_predicate);
     runner.add_test(data_belongs_to_regions);
     runner.add_test(are_domain_neighbors);
-    runner.add_test(get_domain_neighbors);
+    //runner.add_test(distance2_line_to_el);
 
     runner.run();
     runner.summarize();
