@@ -58,7 +58,7 @@ void init_particles_random_v(std::vector<elements::Element<N>> &elements, sim_pa
     float T0 = params->T0;
     int n = elements.size();
     std::mt19937 gen(seed);
-    std::uniform_real_distribution udist(0.0,1.0);
+    std::uniform_real_distribution<double> udist(0.0,1.0);
     for (int i = 0; i < n; ++i) {
         double R = T0 * std::sqrt(-2 * std::log(udist(gen)));
         double T = 2 * M_PI * udist(gen);
