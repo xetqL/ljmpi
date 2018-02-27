@@ -232,9 +232,7 @@ void run_box(FILE* fp, // Output file (at 0)
 
     for (int frame = 1; frame < nframes; ++frame) {
         for (int i = 0; i < npframe; ++i) {
-            MPI_Barrier(comm);
-            double start = MPI_Wtime();
-            //re-balance every Nth iteration
+            auto start = std::chrono::steady_clock::now();
             load_balancer.migrate_particles(local_el, domain_boundaries);
             remote_el = load_balancer.exchange_data(local_el, domain_boundaries);
             switch (params->computation_method) {
@@ -247,23 +245,28 @@ void run_box(FILE* fp, // Output file (at 0)
                     compute_forces(M, lsub, local_el, remote_el, plklist, params);
                     break;
             }
-
             leapfrog2(dt, local_el);
             leapfrog1(dt, local_el);
             apply_reflect(local_el, params->simsize);
-
-            double diff = (MPI_Wtime() - start) / 1e-3; //divide time by tick resolution
+            auto end = std::chrono::steady_clock::now();
+            auto diff = std::chrono::duration <double, std::milli> ((end-start)).count();
             std::vector<double> times(nproc);
             MPI_Gather(&diff, 1, MPI_DOUBLE, &times.front(), 1, MPI_DOUBLE, 0, comm);
             write_report_data(lb_file, i+(frame-1)*npframe, times, rank);
         }
-        load_balancing::gather_elements_on(params->npart, local_el, 0, recv_buf, load_balancer.get_element_datatype(), comm);
+        int nlocal = local_el.size();
+        std::vector<int> counts(nproc,0), displs(nproc, 0);
+        MPI_Gather(&nlocal, 1, MPI_INT, &counts.front(), 1, MPI_INT, 0, comm);
+        for(int cpt = 0; cpt < nproc; ++cpt) displs[cpt] = cpt == 0? 0: displs[cpt-1]+counts[cpt-1];
+        MPI_Gatherv(&local_el.front(), nlocal, load_balancer.get_element_datatype(), &recv_buf.front(),
+                    &counts.front(), &displs.front(), load_balancer.get_element_datatype(), 0, comm);
+
         if (fp) {
-             double end = MPI_Wtime();
-             double time_spent = (end - begin);
-             write_frame_data(fp, params->npart, &recv_buf[0]);
-             printf("Frame [%d] completed in %f seconds\n", frame, time_spent);
-             begin = MPI_Wtime();
+            clock_t end = clock();
+            double time_spent = (double) (end - begin) / CLOCKS_PER_SEC;
+            write_frame_data(fp, params->npart, &recv_buf[0]);
+            printf("Frame [%d] completed in %f seconds\n", frame, time_spent);
+            begin = clock();
         }
     }
     load_balancer.stop();
