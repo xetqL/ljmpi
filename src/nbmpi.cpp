@@ -230,22 +230,12 @@ void run_box(FILE* fp, // Output file (at 0)
     leapfrog1(dt, local_el);
     apply_reflect(local_el, params->simsize);
 
-
     for (int frame = 1; frame < nframes; ++frame) {
         for (int i = 0; i < npframe; ++i) {
             MPI_Barrier(comm);
             double start = MPI_Wtime();
-            if (params->lb_interval > 0 && ((i+(frame-1)*npframe) % params->lb_interval) == 0) {
-                load_balancing::gather_elements_on(params->npart, local_el, 0, local_el, load_balancer.get_element_datatype(), comm);
-                //re-balance dat shit now bru'
-                partitioning::geometric::Domain<N> _domain_boundary = {
-                        std::make_pair(0.0, params->simsize), std::make_pair(0.0, params->simsize),
-                };
-                domain_boundaries = { _domain_boundary };
-                load_balancer.load_balance(local_el, domain_boundaries);
-            } else { // otherwise simply migrate particles
-                load_balancer.migrate_particles(local_el, domain_boundaries);
-            }
+            //re-balance every Nth iteration
+            load_balancer.migrate_particles(local_el, domain_boundaries);
             remote_el = load_balancer.exchange_data(local_el, domain_boundaries);
             switch (params->computation_method) {
                 case 1:
@@ -261,11 +251,11 @@ void run_box(FILE* fp, // Output file (at 0)
             leapfrog2(dt, local_el);
             leapfrog1(dt, local_el);
             apply_reflect(local_el, params->simsize);
-            double diff = (MPI_Wtime() - start); //divide time by tick resolution
+
+            double diff = (MPI_Wtime() - start) / 1e-3; //divide time by tick resolution
             std::vector<double> times(nproc);
             MPI_Gather(&diff, 1, MPI_DOUBLE, &times.front(), 1, MPI_DOUBLE, 0, comm);
             write_report_data(lb_file, i+(frame-1)*npframe, times, rank);
-
         }
         load_balancing::gather_elements_on(params->npart, local_el, 0, recv_buf, load_balancer.get_element_datatype(), comm);
         if (fp) {
@@ -275,11 +265,10 @@ void run_box(FILE* fp, // Output file (at 0)
              printf("Frame [%d] completed in %f seconds\n", frame, time_spent);
              begin = MPI_Wtime();
         }
-
     }
     load_balancer.stop();
     if(rank==0){
-        double diff =(MPI_Wtime() - start_sim);
+        double diff =(MPI_Wtime() - start_sim) ;
         lb_file << diff << std::endl;
         lb_file.close();
     }
@@ -351,7 +340,7 @@ int main(int argc, char** argv) {
 
     if (fp) fclose(fp);
 
-    if (rank == 0) printf("Simulation finished in %f seconds\n", (t2-t1));
+    if (rank == 0) printf("Simulation finished in %f seconds\n", (t2 - t1));
 
     MPI_Finalize();
     return 0;
