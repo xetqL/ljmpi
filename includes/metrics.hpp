@@ -371,13 +371,13 @@ all_compute_metrics(std::shared_ptr<SlidingWindow<RealType>> window_times,
     
     return {
             gini_times, gini_complexities, gini_communications, // LB for times, complexity, and communications
-            //*std::max_element(times.begin(), times.end()),
+            *std::max_element(times.begin(), times.end()),
             //(RealType) gsl_stats_variance(&window_gini_times->data_container.front(), 1, window_gini_times->data_container.size()),
             //(RealType) gsl_stats_variance(&window_gini_complexities->data_container.front(), 1, window_gini_times->data_container.size()),
             //(RealType) gsl_stats_variance(&window_times->data_container.front(), 1, window_gini_times->data_container.size()),
             //(RealType) gsl_stats_variance(&window_gini_communications->data_container.front(), 1, window_gini_times->data_container.size()),
             //(RealType) variance<RealType>(mu_interaction_times),
-            //slope_gini_times, slope_gini_complexity, slope_times, slope_gini_communications,
+            slope_gini_times, slope_gini_complexity, slope_times, slope_gini_communications,
             //macd_gini_times, macd_gini_complexity, macd_times, macd_gini_communications
     };
 }
