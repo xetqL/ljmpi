@@ -70,7 +70,7 @@ inline void remove_unnecessary_nodes(NodeQueue<N>& queue, std::shared_ptr<LBNode
 template<int N>
 std::vector<LBSolutionPath<N>> Astar_runner(
         MESH_DATA<N> *p_mesh_data,
-        Zoltan_Struct *load_balancer,
+        Zoltan_Struct *p_load_balancer,
         sim_param_t *params,
         const MPI_Comm comm = MPI_COMM_WORLD) {
     // MPI Init ...
@@ -86,10 +86,10 @@ std::vector<LBSolutionPath<N>> Astar_runner(
     int number_of_visited_node = 0, number_of_frames_computed = 0;
 
     double it_start, true_iteration_time, my_iteration_time;
-    MESH_DATA<N> mesh_data = *p_mesh_data, tmp_data, *p_tmp_data;
+    MESH_DATA<N> *mesh_data, tmp_data, *p_tmp_data;
 
     partitioning::CommunicationDatatype datatype = elements::register_datatype<N>();
-    Domain<N> domain_boundaries = retrieve_domain_boundaries<N>(load_balancer, nproc, params);
+    Domain<N> domain_boundaries = retrieve_domain_boundaries<N>(p_load_balancer, nproc, params);
     std::unordered_map<long long, std::unique_ptr<std::vector<elements::Element<N> > > > plklist;
     std::multiset<std::shared_ptr<LBNode<N> >, Compare<MESH_DATA<N>, Domain<N>> > queue;
 
@@ -107,7 +107,7 @@ std::vector<LBSolutionPath<N>> Astar_runner(
 
     std::vector<bool> tried_to_load_balance(nframes, false);
 
-    std::shared_ptr<LBNode<N> > current_node = std::make_shared<LBNode<N>>(mesh_data, domain_boundaries, load_balancer), solution;
+    std::shared_ptr<LBNode<N> > current_node = std::make_shared<LBNode<N>>(*p_mesh_data, domain_boundaries, p_load_balancer), solution;
     std::vector<std::shared_ptr<LBNode<N> > > solutions;
 
     current_node->metrics_before_decision = dataset_entry;
@@ -123,26 +123,27 @@ std::vector<LBSolutionPath<N>> Astar_runner(
         number_of_visited_node++;
         for(std::shared_ptr<LBNode<N> >& child : children){
             if(!child) continue;
-            mesh_data = child->mesh_data;
+            mesh_data = &child->mesh_data;
             domain_boundaries = child->domain;
+            auto load_balancer = child->lb;
             child_cost = 0;
             int frame = 1 + (child->start_it / npframe);
             int frame_id = (child->start_it / npframe);
             switch(child->get_node_type()) {
-                case NodeType::Partitioning: if(!tried_to_load_balance[frame_id]) {
-                    MPI_Barrier(comm);
-                    double partitioning_start_time = MPI_Wtime();
-                    zoltan_load_balance<N>(&mesh_data, domain_boundaries, load_balancer, nproc, params, datatype, comm);
-                    double my_partitioning_time = MPI_Wtime() - partitioning_start_time;
-                    MPI_Barrier(comm);
+                case NodeType::Partitioning:
+                    if(!tried_to_load_balance[frame_id]) {
+                        MPI_Barrier(comm);
+                        double partitioning_start_time = MPI_Wtime();
+                        zoltan_load_balance<N>(mesh_data, domain_boundaries, load_balancer, nproc, params, datatype, comm);
+                        double my_partitioning_time = MPI_Wtime() - partitioning_start_time;
+                        MPI_Barrier(comm);
 
-                    MPI_Allreduce(&my_partitioning_time, &child_cost, 1, MPI_DOUBLE, MPI_MAX, comm);
+                        MPI_Allreduce(&my_partitioning_time, &child_cost, 1, MPI_DOUBLE, MPI_MAX, comm);
 
-                    child->last_metric = child->metrics_before_decision;
-                    child->mesh_data = mesh_data;      //update particles
-                    child->domain = domain_boundaries; //update the partitioning
-                    child->node_cost = child_cost;     //set how much time it costed
-                    queue.insert(child);
+                        child->last_metric = child->metrics_before_decision;
+                        child->domain = domain_boundaries; //update the partitioning
+                        child->node_cost = child_cost;     //set how much time it costed
+                        queue.insert(child);
                     }
                     break;
                 case NodeType::Computing:
@@ -158,11 +159,12 @@ std::vector<LBSolutionPath<N>> Astar_runner(
                         for (int i = 0; i < npframe; ++i) {
                             MPI_Barrier(comm);
                             it_start = MPI_Wtime();
-                            load_balancing::geometric::migrate_particles<N>(mesh_data.els, domain_boundaries, datatype, comm);
+                            load_balancing::geometric::migrate_particles<N>(mesh_data->els, domain_boundaries, datatype, comm);
                             MPI_Barrier(comm);
-                            computation_info = lennard_jones::compute_one_step<N>(&mesh_data, plklist, domain_boundaries, datatype,
+                            computation_info = lennard_jones::compute_one_step<N>(mesh_data, plklist, domain_boundaries, datatype,
                                                                                   params, comm, frame);
                             my_iteration_time = MPI_Wtime() - it_start;
+
                             std::tie(complexity, received, sent) = computation_info;
                             MPI_Allgather(&my_iteration_time, 1, MPI_DOUBLE, &times.front(), 1, MPI_DOUBLE, comm);
                             true_iteration_time = *std::max_element(times.begin(), times.end());
@@ -171,6 +173,7 @@ std::vector<LBSolutionPath<N>> Astar_runner(
                                                                         true_iteration_time, times, 0.0, sent, received, complexity, comm);
                             child_cost += true_iteration_time;
                         }
+
                         child->end_it += npframe;
 
                         child->last_metric = {};
@@ -180,7 +183,6 @@ std::vector<LBSolutionPath<N>> Astar_runner(
                         child->last_metric.push_back(dataset_entry.at(2) - child->metrics_before_decision.at(2));
                         child->last_metric.push_back(dataset_entry.at(3) - child->metrics_before_decision.at(3));
 
-                        child->mesh_data = mesh_data;      //update particles
                         child->domain = domain_boundaries; //update the partitioning
                         child->node_cost = child_cost;     //set how much time it costed
                         queue.insert(child);

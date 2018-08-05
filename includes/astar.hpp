@@ -15,19 +15,7 @@ enum NodeLBDecision {LoadBalance, DoNothing};
 
 template<typename MESH_DATA, typename Domain>
 struct Node : public metric::FeatureContainer, public std::enable_shared_from_this<Node<MESH_DATA, Domain>>{
-    Node (int startit, NodeLBDecision decision, NodeType type,
-          MESH_DATA mesh_data, std::shared_ptr<Node<MESH_DATA, Domain>> p, Domain domain) :
-            start_it(startit),
-            end_it(startit),
-            parent(p),
-            decision(decision),
-            type(type),
-            node_cost(0.0),
-            heuristic_cost(0.0),
-            metrics_before_decision(parent->last_metric),
-            mesh_data(mesh_data),
-            domain(domain),
-            lb(Zoltan_Copy(parent->lb)){};
+
 
     int start_it, end_it;
     std::shared_ptr<Node<MESH_DATA, Domain>> parent;
@@ -45,8 +33,10 @@ struct Node : public metric::FeatureContainer, public std::enable_shared_from_th
     Zoltan_Struct* lb;
 
     inline double my_cost() const {
-        if(parent) return parent->cost() + node_cost;
-        else return node_cost;
+        if(parent)
+            return parent->cost() + node_cost;
+        else
+            return node_cost;
     }
 
     inline double cost() const {
@@ -69,7 +59,19 @@ struct Node : public metric::FeatureContainer, public std::enable_shared_from_th
         return decision == NodeLBDecision::LoadBalance ? 1:0;
     }
 
-
+    Node (int startit, NodeLBDecision decision, NodeType type,
+          MESH_DATA mesh_data, std::shared_ptr<Node<MESH_DATA, Domain>> p, Domain domain) :
+            start_it(startit),
+            end_it(startit),
+            parent(p),
+            decision(decision),
+            type(type),
+            node_cost(0.0),
+            heuristic_cost(0.0),
+            metrics_before_decision(parent->last_metric),
+            mesh_data(mesh_data),
+            domain(domain),
+            lb(Zoltan_Copy(parent->lb)){};
 
     Node(MESH_DATA mesh_data, Domain domain, Zoltan_Struct* zz):
             start_it(0), end_it(0), parent(nullptr),
@@ -85,13 +87,13 @@ struct Node : public metric::FeatureContainer, public std::enable_shared_from_th
         switch(type) {
             case NodeType::Partitioning:
                 return {
-                        std::make_shared<Node<MESH_DATA, Domain>>(end_it, NodeLBDecision::LoadBalance, NodeType::Computing, mesh_data, this->shared_from_this(), domain),
+                        std::make_shared<Node<MESH_DATA, Domain>>(end_it, NodeLBDecision::LoadBalance, NodeType::Computing,   mesh_data,  this->shared_from_this(), domain),
                         nullptr
                 };
             case NodeType::Computing:
                 return {
                         std::make_shared<Node<MESH_DATA, Domain>>(end_it, NodeLBDecision::LoadBalance, NodeType::Partitioning, mesh_data, this->shared_from_this(), domain),
-                        std::make_shared<Node<MESH_DATA, Domain>>(end_it, NodeLBDecision::DoNothing, NodeType::Computing, mesh_data, this->shared_from_this(), domain)
+                        std::make_shared<Node<MESH_DATA, Domain>>(end_it, NodeLBDecision::DoNothing,   NodeType::Computing,    mesh_data, this->shared_from_this(), domain)
                 };
         }
     }

@@ -357,28 +357,28 @@ all_compute_metrics(std::shared_ptr<SlidingWindow<RealType>> window_times,
     RealType macd_gini_times = metric::load_dynamic::compute_macd_ema(window_gini_times->data_container, 12, 26,
                                                                       2.0/(window_gini_times->data_container.size()+1));
     RealType slope_gini_complexity = statistic::linear_regression<RealType>(it, window_gini_complexities->data_container).first;
-    RealType macd_gini_complexity = metric::load_dynamic::compute_macd_ema(
-            window_gini_complexities->data_container, 12, 26,
-            2.0 / (window_gini_complexities->data_container.size() + 1));
+    //RealType macd_gini_complexity = metric::load_dynamic::compute_macd_ema(
+    //        window_gini_complexities->data_container, 12, 26,
+    //        2.0 / (window_gini_complexities->data_container.size() + 1));
     RealType slope_gini_communications = statistic::linear_regression<RealType>(it, window_gini_communications->data_container).first;
-    RealType macd_gini_communications = metric::load_dynamic::compute_macd_ema(
-            window_gini_communications->data_container, 12, 26,
-            2.0 / (window_gini_complexities->data_container.size() + 1));
+    //RealType macd_gini_communications = metric::load_dynamic::compute_macd_ema(
+    //        window_gini_communications->data_container, 12, 26,
+    //        2.0 / (window_gini_complexities->data_container.size() + 1));
     RealType slope_times = statistic::linear_regression<RealType>(it, window_times->data_container).first;
-    RealType macd_times = metric::load_dynamic::compute_macd_ema(window_times->data_container, 12, 26,
-            2.0 / (window_times->data_container.size() + 1));
+    //RealType macd_times = metric::load_dynamic::compute_macd_ema(window_times->data_container, 12, 26,
+    //        2.0 / (window_times->data_container.size() + 1));
 
     
     return {
             gini_times, gini_complexities, gini_communications, // LB for times, complexity, and communications
-            *std::max_element(times.begin(), times.end()),
+            //*std::max_element(times.begin(), times.end()),
             //(RealType) gsl_stats_variance(&window_gini_times->data_container.front(), 1, window_gini_times->data_container.size()),
             //(RealType) gsl_stats_variance(&window_gini_complexities->data_container.front(), 1, window_gini_times->data_container.size()),
             //(RealType) gsl_stats_variance(&window_times->data_container.front(), 1, window_gini_times->data_container.size()),
             //(RealType) gsl_stats_variance(&window_gini_communications->data_container.front(), 1, window_gini_times->data_container.size()),
-            (RealType) variance<RealType>(mu_interaction_times),
+            //(RealType) variance<RealType>(mu_interaction_times),
             //slope_gini_times, slope_gini_complexity, slope_times, slope_gini_communications,
-            macd_gini_times, macd_gini_complexity, macd_times, macd_gini_communications
+            //macd_gini_times, macd_gini_complexity, macd_times, macd_gini_communications
     };
 }
 

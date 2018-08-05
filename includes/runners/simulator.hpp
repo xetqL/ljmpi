@@ -79,10 +79,9 @@ double simulate(FILE *fp,          // Output file (at 0)
         double frame_time = 0.0;
         for (int i = 0; i < npframe; ++i) {
             double it_time;
-
             MPI_Barrier(comm); //wait for all to do communications
-
             double begin = MPI_Wtime(); //start of step
+
             if (lb_policy->should_load_balance(i + frame * npframe, a /* should be replaced by the metrics */)){
                 zoltan_load_balance<N>(mesh_data, domain_boundaries, load_balancer, nproc, params, datatype, comm);
                 nb_lb ++;
