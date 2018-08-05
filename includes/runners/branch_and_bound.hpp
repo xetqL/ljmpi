@@ -177,8 +177,6 @@ std::vector<LBSolutionPath<N>> Astar_runner(
                         child->end_it += npframe;
 
                         child->last_metric = {};
-                        std::cout << dataset_entry.size() << std::endl;
-                        std::cout << child->metrics_before_decision.size() << std::endl;
                         std::copy(dataset_entry.begin(), dataset_entry.end(), std::back_inserter(child->last_metric));
                         child->last_metric.push_back(dataset_entry.at(0) - child->metrics_before_decision.at(0));
                         child->last_metric.push_back(dataset_entry.at(1) - child->metrics_before_decision.at(1));
