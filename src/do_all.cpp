@@ -210,8 +210,8 @@ int main(int argc, char **argv) {
     size_t sol_idx = 0;
     for (auto const& solution : astar_optimal_paths) {
         if (!rank){
-            std::cout << "Solution ("<<sol_idx<<"):" << std::endl;
-            for(auto const& node : solution){
+            std::cout << "Solution ("<<sol_idx<<") = "<< (*(std::next(solution.end(), -1)))->cost() << std::endl;
+            for(auto const& node : solution) {
                 if(node->type == NodeType::Computing)
                     std::cout << std::setprecision(10) << "frame time: " << node->node_cost << " ? "<< (node->decision==NodeLBDecision::LoadBalance ? "1" : "0") << std::endl;
             }
@@ -233,7 +233,7 @@ int main(int argc, char **argv) {
     if(!rank && file_exists(RESULT_FILENAME)) {
         std::remove(RESULT_FILENAME.c_str());
     }
-    for (unsigned int lb_policy_idx = 1; lb_policy_idx < 6 ; ++lb_policy_idx) {
+    for (unsigned int lb_policy_idx = 1; lb_policy_idx < 7 ; ++lb_policy_idx) {
         mesh_data = original_data; //recover data from the clean copy
         switch (lb_policy_idx) {
             case 0:
@@ -252,6 +252,9 @@ int main(int argc, char **argv) {
                 lb_policy = std::make_shared<decision_making::ThresholdHeuristicPolicy>(0.6);
                 break;
             case 5://load the file created above
+                lb_policy = std::make_shared<decision_making::PeriodicPolicy>(1);
+                break;
+            case 6://load the file created above
                 lb_policy = std::make_shared<decision_making::InFilePolicy>(
                         DATASET_FILENAME, params.nframes, params.npframe);
                 break;

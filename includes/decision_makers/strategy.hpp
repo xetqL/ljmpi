@@ -75,7 +75,6 @@ namespace decision_making {
 
             }
             dataset.close();
-            std::cout << decisions.size() << std::endl;
         }
 
         virtual inline bool should_load_balance(int it, metric::LBMetrics<double>* mc) override {

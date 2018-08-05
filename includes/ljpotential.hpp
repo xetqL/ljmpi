@@ -396,7 +396,6 @@ inline std::tuple<int, int, int> compute_one_step(
             }
     }
     /// IT STOPS HERE
-
     leapfrog2(dt, mesh_data->els);
     leapfrog1(dt, mesh_data->els);
     apply_reflect(mesh_data->els, params->simsize);
