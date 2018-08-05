@@ -233,7 +233,7 @@ int main(int argc, char **argv) {
     if(!rank && file_exists(RESULT_FILENAME)) {
         std::remove(RESULT_FILENAME.c_str());
     }
-    for (unsigned int lb_policy_idx = 0; lb_policy_idx < 6 ; ++lb_policy_idx) {
+    for (unsigned int lb_policy_idx = 1; lb_policy_idx < 6 ; ++lb_policy_idx) {
         mesh_data = original_data; //recover data from the clean copy
         switch (lb_policy_idx) {
             case 0:
