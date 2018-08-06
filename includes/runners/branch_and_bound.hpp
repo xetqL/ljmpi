@@ -145,8 +145,8 @@ std::vector<LBSolutionPath<N>> Astar_runner(
                         MPI_Allreduce(&my_partitioning_time, &child_cost, 1, MPI_DOUBLE, MPI_MAX, comm);
 
                         child->last_metric = child->metrics_before_decision;
-                        child->domain = domain_boundaries; //update the partitioning
-                        child->node_cost = child_cost;     //set how much time it costed
+                        child->domain = domain_boundaries; // update the partitioning
+                        child->node_cost = child_cost;     // set how much time it costed
                         if(!rank) std::cout << child << std::endl;
                         queue.insert(child);
                     }
