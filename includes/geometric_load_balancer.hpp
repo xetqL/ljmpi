@@ -396,7 +396,6 @@ namespace load_balancing {
                 size_t data_id = 0;
                 while (data_id < data.size()) {
                     if (elements::is_inside<N>(data.at(data_id), domains.at(PE))) {
-                        std::cout << "STFU it is not possible !" << std::endl;
                         //if the current element has to be moved, then swap with the last and pop it out (dont need to move the pointer also)
                         //swap iterator values in constant time
                         std::iter_swap(data.begin() + data_id, data.end() - 1);
