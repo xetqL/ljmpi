@@ -363,8 +363,11 @@ inline std::tuple<int, int, int> compute_one_step(
     auto cell_per_row = (long long) std::ceil(params->simsize / cut_off_radius); // number of cell in a row
     double cell_size = cut_off_radius; //cell size
     const double dt = params->dt;
-
+    const double __cpt_start = MPI_Wtime();
+    int rank;
+    MPI_Comm_rank(comm, &rank);
     auto remote_el = load_balancing::geometric::exchange_data<N>(mesh_data->els, domain_boundaries, datatype, comm, received, sent, cell_size);
+    if(!rank) std::cout << "load_balancing::geometric::exchange_data<N> =" <<(MPI_Wtime() - __cpt_start) << std::endl;
 
     // update local ids
     const size_t nb_elements = mesh_data->els.size();
