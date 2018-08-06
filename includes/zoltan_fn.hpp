@@ -155,7 +155,7 @@ inline void zoltan_load_balance(MESH_DATA<N>* mesh_data,
 
     load_balancing::geometric::migrate_zoltan<N>(mesh_data->els, numImport, numExport, exportProcs,
                                                  exportGlobalGids, datatype, MPI_COMM_WORLD);
-
+    std::cout << mesh_data->els.size() << std::endl;
     Zoltan_LB_Free_Part(&importGlobalGids, &importLocalGids, &importProcs, &importToPart);
     Zoltan_LB_Free_Part(&exportGlobalGids, &exportLocalGids, &exportProcs, &exportToPart);
 }
