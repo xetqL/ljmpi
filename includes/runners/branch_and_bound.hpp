@@ -107,6 +107,8 @@ std::vector<LBSolutionPath<N>> Astar_runner(
 
     std::vector<bool> tried_to_load_balance(nframes, false);
     load_balancing::geometric::migrate_particles<N>(p_mesh_data->els, domain_boundaries, datatype, comm);
+    MPI_Barrier(comm);
+
     std::shared_ptr<LBNode<N> > current_node = std::make_shared<LBNode<N>>(*p_mesh_data, domain_boundaries, p_load_balancer), solution;
     std::vector<std::shared_ptr<LBNode<N> > > solutions;
 
