@@ -161,7 +161,7 @@ std::vector<LBSolutionPath<N>> Astar_runner(
                         std::vector<double> dataset_entry(N_FEATURES + N_LABEL);
                         auto local_cpied_data = *mesh_data;
 
-                        for (int i = 0; i < npframe; ++i) {
+                        for (int i = 0; i < 1; ++i) {
                             for(int d = 0; d < N; ++d)
                                 for(auto& v: mesh_data->els)
                                     v.position[d] *= 1.0;
