@@ -106,6 +106,8 @@ std::vector<LBSolutionPath<N>> Astar_runner(
             optimal_frame_time_lookup_table(nframes);
 
     std::vector<bool> tried_to_load_balance(nframes, false);
+
+    MPI_Barrier(comm);
     load_balancing::geometric::migrate_particles<N>(p_mesh_data->els, domain_boundaries, datatype, comm);
     MPI_Barrier(comm);
 
