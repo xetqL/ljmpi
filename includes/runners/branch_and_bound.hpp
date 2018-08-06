@@ -133,7 +133,7 @@ std::vector<LBSolutionPath<N>> Astar_runner(
             switch(child->get_node_type()) {
                 case NodeType::Partitioning:
                     if(!tried_to_load_balance[frame_id]) {
-                        if(!rank) std::cout << child << std::endl;
+
                         MPI_Barrier(comm);
                         double partitioning_start_time = MPI_Wtime();
                         zoltan_load_balance<N>(mesh_data, domain_boundaries, load_balancer, nproc, params, datatype, comm);
@@ -145,6 +145,7 @@ std::vector<LBSolutionPath<N>> Astar_runner(
                         child->last_metric = child->metrics_before_decision;
                         child->domain = domain_boundaries; //update the partitioning
                         child->node_cost = child_cost;     //set how much time it costed
+                        if(!rank) std::cout << child << std::endl;
                         queue.insert(child);
                     }
                     break;
@@ -161,12 +162,6 @@ std::vector<LBSolutionPath<N>> Astar_runner(
                         std::vector<double> dataset_entry(N_FEATURES + N_LABEL);
                         auto local_cpied_data = *mesh_data;
 
-                        for (int i = 0; i < 1; ++i) {
-                            for(int d = 0; d < N; ++d)
-                                for(auto& v: mesh_data->els)
-                                    v.position[d] *= 1.0;
-                        }
-
                         for (int i = 0; i < npframe; ++i) {
                             MPI_Barrier(comm);
                             const double __start = MPI_Wtime();
@@ -180,6 +175,10 @@ std::vector<LBSolutionPath<N>> Astar_runner(
 
                             MPI_Allgather(&my_iteration_time, 1, MPI_DOUBLE, &times.front(), 1, MPI_DOUBLE, comm);
                             true_iteration_time = *std::max_element(times.begin(), times.end());
+                            if(!rank && true_iteration_time > 1.0) {
+                                std::for_each(times.begin(), times.end(), [](auto v){std::cout << v << ",";});
+                                std::cout << "\n";
+                            }
                             dataset_entry = metric::all_compute_metrics(window_times, window_gini_times,
                                                                         window_gini_complexities, window_gini_communications,
                                                                         true_iteration_time, times, 0.0, sent, received, complexity, comm);
