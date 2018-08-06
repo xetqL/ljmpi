@@ -92,13 +92,10 @@ struct Node : public metric::FeatureContainer, public std::enable_shared_from_th
                         nullptr
                 };
             case NodeType::Computing:
-                if(start_it == 0)
-                    return {nullptr, std::make_shared<Node<MESH_DATA, Domain>>(end_it, NodeLBDecision::DoNothing,   NodeType::Computing, mesh_data, this->shared_from_this(), domain)};
-                else
-                    return {
+                return {
                             std::make_shared<Node<MESH_DATA, Domain>>(end_it, NodeLBDecision::LoadBalance, NodeType::Partitioning, mesh_data, this->shared_from_this(), domain),
                             std::make_shared<Node<MESH_DATA, Domain>>(end_it, NodeLBDecision::DoNothing,   NodeType::Computing,    mesh_data, this->shared_from_this(), domain)
-                    };
+                };
         }
     }
 };

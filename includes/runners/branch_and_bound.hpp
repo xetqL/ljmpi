@@ -158,7 +158,7 @@ std::vector<LBSolutionPath<N>> Astar_runner(
                         std::tuple<int, int, int> computation_info;
                         std::vector<double> dataset_entry(N_FEATURES + N_LABEL);
                         auto local_cpied_data = *mesh_data;
-
+                        child->end_it += npframe;
                         for (int i = 0; i < npframe; ++i) {
                             MPI_Barrier(comm);
                             it_start = MPI_Wtime();
@@ -183,7 +183,7 @@ std::vector<LBSolutionPath<N>> Astar_runner(
                             child_cost += true_iteration_time;
                         }
 
-                        child->end_it += npframe;
+
 
                         child->last_metric = {};
                         std::copy(dataset_entry.begin(), dataset_entry.end(), std::back_inserter(child->last_metric));
