@@ -161,7 +161,7 @@ std::vector<LBSolutionPath<N>> Astar_runner(
                         std::tuple<int, int, int> computation_info;
                         std::vector<double> dataset_entry(N_FEATURES + N_LABEL);
 
-                        domain_boundaries = retrieve_domain_boundaries(load_balancer, nproc, params);
+                        domain_boundaries = retrieve_domain_boundaries<N>(load_balancer, nproc, params);
                         std::cout << mesh_data->els.size() << std::endl;
                         for (int i = 0; i < npframe; ++i) {
                             MPI_Barrier(comm);
