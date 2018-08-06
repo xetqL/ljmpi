@@ -83,10 +83,10 @@ std::vector<LBSolutionPath<N>> Astar_runner(
     const int NB_BEST_SOLUTIONS = (int) params->nb_best_path,
             LAST_ITERATION = nframes * npframe;
 
-    int number_of_visited_node = 0, number_of_frames_computed = 0;
+    int number_of_visited_node = 0;
 
     double it_start, true_iteration_time, my_iteration_time;
-    MESH_DATA<N> *mesh_data, tmp_data, *p_tmp_data;
+    MESH_DATA<N> *mesh_data, tmp_data;
 
     partitioning::CommunicationDatatype datatype = elements::register_datatype<N>();
     Domain<N> domain_boundaries = retrieve_domain_boundaries<N>(p_load_balancer, nproc, params);
@@ -113,8 +113,7 @@ std::vector<LBSolutionPath<N>> Astar_runner(
     current_node->metrics_before_decision = dataset_entry;
     current_node->last_metric = dataset_entry;
 
-    int it = 0;
-    double child_cost, true_child_cost;
+    double child_cost;
 
     int complexity, received, sent;
 
@@ -125,10 +124,13 @@ std::vector<LBSolutionPath<N>> Astar_runner(
             if(!child) continue;
             mesh_data = &child->mesh_data;
             domain_boundaries = child->domain;
+
             auto load_balancer = child->lb;
+
             child_cost = 0;
-            int frame = 1 + (child->start_it / npframe);
-            int frame_id = (child->start_it / npframe);
+            int frame = 1 + (child->start_it / npframe), frame_id = (child->start_it / npframe);
+            if(!rank) std::cout << child << std::endl;
+
             switch(child->get_node_type()) {
                 case NodeType::Partitioning:
                     if(!tried_to_load_balance[frame_id]) {
@@ -155,6 +157,7 @@ std::vector<LBSolutionPath<N>> Astar_runner(
 
                         std::tuple<int, int, int> computation_info;
                         std::vector<double> dataset_entry(N_FEATURES + N_LABEL);
+                        auto local_cpied_data = *mesh_data;
 
                         for (int i = 0; i < npframe; ++i) {
                             MPI_Barrier(comm);
@@ -171,6 +174,12 @@ std::vector<LBSolutionPath<N>> Astar_runner(
                             dataset_entry = metric::all_compute_metrics(window_times, window_gini_times,
                                                                         window_gini_complexities, window_gini_communications,
                                                                         true_iteration_time, times, 0.0, sent, received, complexity, comm);
+                            if(!rank) {
+                                for(auto const& feature: dataset_entry){
+                                    std::cout << std::setw(6) << std::fixed << std::setprecision(3) << feature << ",";
+                                }
+                                std::cout << std::endl;
+                            }
                             child_cost += true_iteration_time;
                         }
 
@@ -187,7 +196,6 @@ std::vector<LBSolutionPath<N>> Astar_runner(
                         child->node_cost = child_cost;     //set how much time it costed
                         queue.insert(child);
 
-                        if(!rank) std::cout << child << std::endl;
                     }
                     break;
             }

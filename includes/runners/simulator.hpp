@@ -50,8 +50,6 @@ double simulate(FILE *fp,          // Output file (at 0)
     std::vector<partitioning::geometric::Domain<N>> domain_boundaries = retrieve_domain_boundaries<N>(load_balancer, nproc, params);
     std::unordered_map<long long, std::unique_ptr<std::vector<elements::Element<N> > > > plklist;
 
-    //double rm = 3.2 * params->sig_lj; // r_m = 3.2 * sig
-
     std::vector<elements::Element<N>> recv_buf(params->npart);
     auto date = get_date_as_string();
 
@@ -68,7 +66,7 @@ double simulate(FILE *fp,          // Output file (at 0)
     }
 
     int nb_lb = 0;
-    //std::vector<elements::Element<N>> remote_el;
+
     metric::LBMetrics<double>* a = new metric::LBMetrics<double>({0.0});
     std::vector<double> times(nproc);
     MESH_DATA<N> tmp_data;
@@ -89,7 +87,8 @@ double simulate(FILE *fp,          // Output file (at 0)
                 load_balancing::geometric::migrate_particles<N>(mesh_data->els, domain_boundaries, datatype, comm);
             }
 
-            MPI_Barrier(comm); //everybody've finished communications
+            //everybody've finished communications
+            MPI_Barrier(comm);
             //everybody computes a step
             auto computation_info = lennard_jones::compute_one_step<N>(mesh_data, plklist, domain_boundaries, datatype, params, comm, frame);
 
@@ -97,12 +96,10 @@ double simulate(FILE *fp,          // Output file (at 0)
             //compute my own time
             it_time = (end - begin);
             //everybody share their time
+
             MPI_Allgather(&it_time, 1, MPI_DOUBLE, &times.front(), 1, MPI_DOUBLE, comm);
-
             double true_iteration_time = *std::max_element(times.begin(), times.end());
-
             frame_time += true_iteration_time;
-
             std::tie(complexity, received, sent) = computation_info;
 
             std::vector<double> complexities(nproc);
