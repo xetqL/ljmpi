@@ -121,7 +121,7 @@ template<typename MESH_DATA, typename Domain>
 std::ostream &operator <<(std::ostream& output, const std::shared_ptr<Node<MESH_DATA, Domain>>& value)
 {
     output << " Iteration: " << std::setw(6) << value->start_it <<  " -> " << std::setw(6) << value->end_it;
-    output << " Edge Cost: " << std::setw(6) << std::fixed << std::setprecision(5) << value->node_cost;
+    output << " Cost to node: " << std::setw(6) << std::fixed << std::setprecision(5) << value->cost();
     output << " Features: (";
     for(auto const& feature: value->metrics_before_decision){
         output << std::setw(6) << std::fixed << std::setprecision(3) << feature << ",";
