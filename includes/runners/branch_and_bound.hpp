@@ -129,11 +129,12 @@ std::vector<LBSolutionPath<N>> Astar_runner(
 
             child_cost = 0;
             int frame = 1 + (child->start_it / npframe), frame_id = (child->start_it / npframe);
-            if(!rank) std::cout << child << std::endl;
 
             switch(child->get_node_type()) {
                 case NodeType::Partitioning:
                     if(!tried_to_load_balance[frame_id]) {
+                        if(!rank) std::cout << child << std::endl;
+
                         MPI_Barrier(comm);
                         double partitioning_start_time = MPI_Wtime();
                         zoltan_load_balance<N>(mesh_data, domain_boundaries, load_balancer, nproc, params, datatype, comm);
@@ -154,11 +155,12 @@ std::vector<LBSolutionPath<N>> Astar_runner(
                             tried_to_load_balance[frame_id] = true;
                             remove_unnecessary_nodes(queue, child);
                         }
+                        child->end_it += npframe;
+                        if(!rank) std::cout << child << std::endl;
 
                         std::tuple<int, int, int> computation_info;
                         std::vector<double> dataset_entry(N_FEATURES + N_LABEL);
                         auto local_cpied_data = *mesh_data;
-                        child->end_it += npframe;
                         for (int i = 0; i < npframe; ++i) {
                             MPI_Barrier(comm);
                             it_start = MPI_Wtime();
