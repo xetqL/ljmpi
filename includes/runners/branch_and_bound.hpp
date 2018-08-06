@@ -171,9 +171,10 @@ std::vector<LBSolutionPath<N>> Astar_runner(
                             const double __cpt_start = MPI_Wtime();
                             computation_info = lennard_jones::compute_one_step<N>(mesh_data, plklist, domain_boundaries, datatype,
                                                                                   params, comm, frame);
-                            if(!rank) std::cout << "lennard_jones::compute_one_step<N> =" <<(MPI_Wtime() - __cpt_start) << std::endl;
+
 
                             const double my_iteration_time = MPI_Wtime() - __start;
+                            if(!rank) std::cout << "lennard_jones::compute_one_step<N> =" <<(my_iteration_time) << std::endl;
                             MPI_Barrier(comm);
                             std::tie(complexity, received, sent) = computation_info;
 
