@@ -176,10 +176,6 @@ std::vector<LBSolutionPath<N>> Astar_runner(
 
                             MPI_Allgather(&my_iteration_time, 1, MPI_DOUBLE, &times.front(), 1, MPI_DOUBLE, comm);
                             true_iteration_time = *std::max_element(times.begin(), times.end());
-                            if(!rank && true_iteration_time > 1.0) {
-                                std::for_each(times.begin(), times.end(), [](auto v){std::cout << v << ",";});
-                                std::cout << "\n";
-                            }
                             dataset_entry = metric::all_compute_metrics(window_times, window_gini_times,
                                                                         window_gini_complexities, window_gini_communications,
                                                                         true_iteration_time, times, 0.0, sent, received, complexity, comm);
