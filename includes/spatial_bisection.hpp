@@ -77,7 +77,8 @@ inline const bool are_domain_neighbors(const Domain<N> &A, const Domain<N> &B, c
 template<size_t N>
 const std::vector<std::pair<size_t, Domain<N> > > get_neighboring_domains(const size_t my_domain_idx, const std::vector<Domain<N>> &domain_list, const double min_d = 0){
     std::vector<std::pair<size_t, Domain<N>>> retval;
-    for(size_t domain_idx = 0; domain_idx < domain_list.size(); ++domain_idx){
+    const size_t nb_domain = domain_list.size();
+    for(size_t domain_idx = 0; domain_idx < nb_domain; ++domain_idx){
         if(domain_idx != my_domain_idx) {
             if(are_domain_neighbors<N>(domain_list.at(my_domain_idx), domain_list.at(domain_idx), min_d))
                 retval.push_back(std::make_pair(domain_idx, domain_list.at(domain_idx)));
@@ -87,7 +88,7 @@ const std::vector<std::pair<size_t, Domain<N> > > get_neighboring_domains(const 
 }
 
 template<int N>
-struct PartitionInfo{
+struct PartitionInfo {
     using Domain=std::array<std::pair<double, double>, N>; //One range per dimension
     const PartitionID part_id;
     const std::vector<elements::Element<N>> elements;

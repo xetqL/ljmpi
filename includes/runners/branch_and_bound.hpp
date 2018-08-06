@@ -134,7 +134,6 @@ std::vector<LBSolutionPath<N>> Astar_runner(
                 case NodeType::Partitioning:
                     if(!tried_to_load_balance[frame_id]) {
                         if(!rank) std::cout << child << std::endl;
-
                         MPI_Barrier(comm);
                         double partitioning_start_time = MPI_Wtime();
                         zoltan_load_balance<N>(mesh_data, domain_boundaries, load_balancer, nproc, params, datatype, comm);
@@ -161,16 +160,24 @@ std::vector<LBSolutionPath<N>> Astar_runner(
                         std::tuple<int, int, int> computation_info;
                         std::vector<double> dataset_entry(N_FEATURES + N_LABEL);
                         auto local_cpied_data = *mesh_data;
+
+                        for (int i = 0; i < npframe; ++i) {
+                            for(int d = 0; d < N; ++d)
+                                for(auto& v: mesh_data->els)
+                                    v.position[d] *= 1.0;
+                        }
+
                         for (int i = 0; i < npframe; ++i) {
                             MPI_Barrier(comm);
-                            it_start = MPI_Wtime();
+                            const double __start = MPI_Wtime();
                             load_balancing::geometric::migrate_particles<N>(mesh_data->els, domain_boundaries, datatype, comm);
                             MPI_Barrier(comm);
                             computation_info = lennard_jones::compute_one_step<N>(mesh_data, plklist, domain_boundaries, datatype,
                                                                                   params, comm, frame);
-                            my_iteration_time = MPI_Wtime() - it_start;
-
+                            const double my_iteration_time = MPI_Wtime() - __start;
+                            MPI_Barrier(comm);
                             std::tie(complexity, received, sent) = computation_info;
+
                             MPI_Allgather(&my_iteration_time, 1, MPI_DOUBLE, &times.front(), 1, MPI_DOUBLE, comm);
                             true_iteration_time = *std::max_element(times.begin(), times.end());
                             dataset_entry = metric::all_compute_metrics(window_times, window_gini_times,
