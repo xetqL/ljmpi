@@ -229,7 +229,7 @@ int main(int argc, char **argv) {
                 lb_policy = std::make_shared<decision_making::RandomPolicy>(0.1, params.seed);
                 break;
             case 4://TODO: threshold should be a parameter
-                lb_policy = std::make_shared<decision_making::ThresholdHeuristicPolicy>(0.6);
+                lb_policy = std::make_shared<decision_making::ThresholdHeuristicPolicy>(0.35);
                 break;
             case 5://load the file created above
                 lb_policy = std::make_shared<decision_making::PeriodicPolicy>(1);
