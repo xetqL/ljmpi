@@ -386,7 +386,7 @@ inline std::tuple<int, int, int> compute_one_step(
      * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
     if(step >= 0) {
         //freeze after T/2 !
-        if(step > params->nframes / 2) params->frozen_factor = 0.0;
+        if(step > params->nframes / 3) params->frozen_factor = 0.0;
         else params->frozen_factor = 1.0;
 
         for (auto &p : mesh_data->els)

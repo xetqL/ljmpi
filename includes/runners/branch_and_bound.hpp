@@ -195,8 +195,6 @@ std::vector<LBSolutionPath<N>> Astar_runner(
                             child_cost += true_iteration_time;
                         }
 
-
-
                         child->last_metric = {};
                         std::copy(dataset_entry.begin(), dataset_entry.end(), std::back_inserter(child->last_metric));
                         child->last_metric.push_back(dataset_entry.at(0) - child->metrics_before_decision.at(0));
