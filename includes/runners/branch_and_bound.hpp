@@ -137,6 +137,7 @@ std::vector<LBSolutionPath<N>> Astar_runner(
             switch(child->get_node_type()) {
                 case NodeType::Partitioning:
                     if(!tried_to_load_balance[frame_id]) {
+                        if(!rank) std::cout << child << std::endl;
 
                         MPI_Barrier(comm);
                         double partitioning_start_time = MPI_Wtime();
@@ -148,8 +149,7 @@ std::vector<LBSolutionPath<N>> Astar_runner(
 
                         child->last_metric = child->metrics_before_decision;
                         child->domain = domain_boundaries; // update the partitioning
-                        child->node_cost = child_cost;     // set how much time it costed
-                        if(!rank) std::cout << child << std::endl;
+                        child->set_cost(child_cost);     //set how much time it costed
                         queue.insert(child);
                     }
                     break;
@@ -159,6 +159,7 @@ std::vector<LBSolutionPath<N>> Astar_runner(
                             tried_to_load_balance[frame_id] = true;
                             remove_unnecessary_nodes(queue, child);
                         }
+
                         child->end_it += npframe;
                         if(!rank) std::cout << child << std::endl;
 
@@ -204,12 +205,13 @@ std::vector<LBSolutionPath<N>> Astar_runner(
                         child->last_metric.push_back(dataset_entry.at(3) - child->metrics_before_decision.at(3));
 
                         child->domain = domain_boundaries; //update the partitioning
-                        child->node_cost = child_cost;     //set how much time it costed
+                        child->set_cost(child_cost);     //set how much time it costed
                         queue.insert(child);
 
                     }
                     break;
             }
+            if(!rank) std::cout << child->cost() << std::endl;
             MPI_Barrier(comm);
         }
 
@@ -227,11 +229,10 @@ std::vector<LBSolutionPath<N>> Astar_runner(
     std::vector<LBSolutionPath<N> > best_paths;
     size_t path_idx = 0;
     while(path_idx < NB_BEST_SOLUTIONS) {
-        double cost = 0;
+
         LBSolutionPath<N> solution_path;
         auto solution = solutions[path_idx];
         while (solution->parent.get() != nullptr) { //reconstruct path
-            cost += solution->node_cost;
             if(solution->type == NodeType::Computing) solution_path.push_front(solution);
             solution = solution->parent;
         }
@@ -241,6 +242,7 @@ std::vector<LBSolutionPath<N>> Astar_runner(
     if(!rank) std::cout << "Visited nodes:"<<number_of_visited_node<<std::endl;
     return best_paths;
 }
+
 /*
 template<int N>
 std::list<std::shared_ptr<NodeWithoutParticles<std::vector<partitioning::geometric::Domain<N>>>>> IDAstar_runner(

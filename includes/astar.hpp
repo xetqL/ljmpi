@@ -16,7 +16,9 @@ enum NodeLBDecision {LoadBalance, DoNothing};
 
 template<typename MESH_DATA, typename Domain>
 struct Node : public metric::FeatureContainer, public std::enable_shared_from_this<Node<MESH_DATA, Domain>>{
-
+private:
+    double node_cost = 0.0;
+public:
 
     int start_it, end_it;
     std::shared_ptr<Node<MESH_DATA, Domain>> parent;
@@ -24,8 +26,8 @@ struct Node : public metric::FeatureContainer, public std::enable_shared_from_th
     NodeLBDecision decision;          // Y / N boolean
     NodeType type;
 
-    double  node_cost,
-            heuristic_cost;      // estimated cost to the solution
+    double heuristic_cost = 0.0,
+            concrete_cost = 0.0;      // estimated cost to the solution
 
     std::vector<double> metrics_before_decision, last_metric;
     MESH_DATA mesh_data;    // particles informations
@@ -33,15 +35,17 @@ struct Node : public metric::FeatureContainer, public std::enable_shared_from_th
 
     Zoltan_Struct* lb;
 
-    inline double my_cost() const {
-        if(parent)
-            return parent->cost() + node_cost;
-        else
-            return node_cost;
+    void set_cost(double node_cost) {
+        this->node_cost = node_cost;
+        this->concrete_cost += node_cost;
+    }
+
+    double get_node_cost() const {
+        return node_cost;
     }
 
     inline double cost() const {
-        return my_cost() + heuristic_cost;
+        return concrete_cost + heuristic_cost;
     }
 
     NodeType get_node_type() const {
@@ -67,8 +71,7 @@ struct Node : public metric::FeatureContainer, public std::enable_shared_from_th
             parent(p),
             decision(decision),
             type(type),
-            node_cost(0.0),
-            heuristic_cost(0.0),
+            concrete_cost(parent->concrete_cost),
             metrics_before_decision(parent->last_metric),
             mesh_data(mesh_data),
             domain(domain),
@@ -77,7 +80,6 @@ struct Node : public metric::FeatureContainer, public std::enable_shared_from_th
     Node(MESH_DATA mesh_data, Domain domain, Zoltan_Struct* zz):
             start_it(0), end_it(0), parent(nullptr),
             decision(NodeLBDecision::LoadBalance), type(NodeType::Computing),
-            node_cost(0), heuristic_cost(0),
             mesh_data(mesh_data),  domain(domain), lb(zz) {}
 
     ~Node() {

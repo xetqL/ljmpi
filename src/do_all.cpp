@@ -192,7 +192,7 @@ int main(int argc, char **argv) {
             std::cout << "Solution ("<<sol_idx<<") = "<< (*(std::next(solution.end(), -1)))->cost() << std::endl;
             for(auto const& node : solution) {
                 if(node->type == NodeType::Computing)
-                    std::cout << std::setprecision(10) << "frame time: " << node->node_cost << " ? "<< (node->decision==NodeLBDecision::LoadBalance ? "1" : "0") << std::endl;
+                    std::cout << std::setprecision(10) << "frame time: " << node->get_node_cost() << " ? "<< (node->decision==NodeLBDecision::LoadBalance ? "1" : "0") << std::endl;
             }
         }
         metric::io::write_dataset(dataset, DATASET_FILENAME, solution, rank, (*(std::next(solution.end(), -1)))->cost());
