@@ -326,7 +326,7 @@ namespace load_balancing {
             MPI_Waitall(cpt, &reqs.front(), MPI_STATUSES_IGNORE);
         }
 
-        template<int N> void zoltan_migrate_particles(
+        template<int N> void zoltan_migrate_particles (
                 std::vector<elements::Element<N>> &data,
                 Zoltan_Struct *load_balancer,
                 const partitioning::CommunicationDatatype datatype,
@@ -358,7 +358,6 @@ namespace load_balancing {
             int cpt = 0, nb_neighbors = data_to_migrate.size();
             for(size_t PE = 0; PE < wsize; PE++) {
                 int send_size = data_to_migrate.at(PE).size();
-                std::cout << send_size << std::endl;
                 MPI_Isend(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, 300, LB_COMM, &reqs[cpt]);
                 cpt++;
             }
@@ -374,7 +373,6 @@ namespace load_balancing {
                 cpt++;
             }
             MPI_Waitall(cpt, &reqs.front(), &statuses.front());
-
         }
 
         template<int N>
@@ -414,6 +412,7 @@ namespace load_balancing {
             int cpt = 0, nb_neighbors = neighbors.size();
             for(const size_t &PE : neighbors) {
                 int send_size = data_to_migrate.at(PE).size();
+                std::cout << caller_rank<<" " <<send_size << std::endl;
                 MPI_Isend(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, 300, LB_COMM, &reqs[cpt]);
                 cpt++;
             }
