@@ -368,8 +368,8 @@ inline std::tuple<int, int, int> compute_one_step(
     MPI_Comm_rank(comm, &rank);
 
     auto remote_el = load_balancing::geometric::exchange_data<N>(mesh_data->els, domain_boundaries, datatype, comm, received, sent, cell_size);
-    MPI_Barrier(comm);
     std::cout << rank << std::endl;
+    MPI_Barrier(comm);
     // update local ids
     const size_t nb_elements = mesh_data->els.size();
     for(size_t i = 0; i < nb_elements; ++i) mesh_data->els[i].lid = i;
