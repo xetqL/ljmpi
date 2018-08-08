@@ -386,7 +386,6 @@ namespace load_balancing {
 
             std::vector<elements::Element<N>> buffer;
             std::vector<std::vector<elements::Element<N>>> data_to_migrate(wsize);
-
             if(neighbors.empty())
                 neighbors = partitioning::utils::unzip(partitioning::geometric::get_neighboring_domains(caller_rank, domains, 0.08)).first;
             for(const size_t &PE : neighbors) {
@@ -409,16 +408,15 @@ namespace load_balancing {
             std::vector<MPI_Status> statuses(neighbors.size());
 
             int cpt = 0, nb_neighbors = neighbors.size();
-
             for(const size_t &PE : neighbors) {
                 int send_size = data_to_migrate.at(PE).size();
-                if (!send_size) continue;
                 MPI_Isend(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, 300, LB_COMM, &reqs[cpt]);
                 cpt++;
             }
 
+            cpt=0;
 
-            /*while(cpt < nb_neighbors) {// receive the data in any order
+            while(cpt < nb_neighbors) {// receive the data in any order
                 int source_rank, size;
                 MPI_Probe(MPI_ANY_SOURCE, 300, LB_COMM, &statuses[cpt]);
                 source_rank = statuses[cpt].MPI_SOURCE;
@@ -427,24 +425,7 @@ namespace load_balancing {
                 MPI_Recv(&buffer.front(), size, datatype.elements_datatype, source_rank, 300, LB_COMM, &statuses[cpt]);
                 std::move(buffer.begin(), buffer.end(), std::back_inserter(data));
                 cpt++;
-            }*/
-
-            MPI_Barrier(LB_COMM);
-
-            cpt=0;
-            int flag = 1;
-            while(flag) {// receive the data in any order
-                int source_rank, size;
-                MPI_Iprobe(MPI_ANY_SOURCE, 200, LB_COMM, &flag, &statuses[cpt]);
-                if (!flag) break;
-                source_rank = statuses[cpt].MPI_SOURCE;
-                MPI_Get_count(&statuses[cpt], datatype.elements_datatype, &size);
-                buffer.resize(size);
-                MPI_Recv(&buffer.front(), size, datatype.elements_datatype, source_rank, 200, LB_COMM, &statuses[cpt]);
-                std::move(buffer.begin(), buffer.end(), std::back_inserter(data));
-                cpt++;
             }
-
 
         }
 
