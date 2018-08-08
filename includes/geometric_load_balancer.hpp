@@ -388,7 +388,6 @@ namespace load_balancing {
             std::vector<std::vector<elements::Element<N>>> data_to_migrate(wsize);
             if(neighbors.empty())
                 neighbors = partitioning::utils::unzip(partitioning::geometric::get_neighboring_domains(caller_rank, domains, 0.08)).first;
-            const double __start = MPI_Wtime();
             for(const size_t &PE : neighbors) {
                 if (PE == (size_t) caller_rank) continue; //do not check with myself
                 // check within the remaining elements which belong to the current PE
@@ -405,10 +404,9 @@ namespace load_balancing {
                     } else data_id++; //if the element must stay with me then check the next one
                 }
             }
-            const double __end = MPI_Wtime();
-            if(!caller_rank) std::cout << (__end - __start) << std::endl;
             std::vector<MPI_Request> reqs(neighbors.size());
             std::vector<MPI_Status> statuses(neighbors.size());
+            const double __start = MPI_Wtime();
 
             int cpt = 0, nb_neighbors = neighbors.size();
             for(const size_t &PE : neighbors) {
@@ -417,6 +415,9 @@ namespace load_balancing {
                 MPI_Isend(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, 300, LB_COMM, &reqs[cpt]);
                 cpt++;
             }
+            const double __end = MPI_Wtime();
+            if(!caller_rank) std::cout << (__end - __start) << std::endl;
+
             cpt=0;
             while(cpt < nb_neighbors) {// receive the data in any order
                 int source_rank, size;
