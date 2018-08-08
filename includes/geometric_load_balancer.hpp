@@ -412,7 +412,6 @@ namespace load_balancing {
             int cpt = 0, nb_neighbors = neighbors.size();
             for(const size_t &PE : neighbors) {
                 int send_size = data_to_migrate.at(PE).size();
-                std::cout << caller_rank<< " " <<send_size << " to " << PE  << std::endl;
                 MPI_Isend(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, 300, LB_COMM, &reqs[cpt]);
                 cpt++;
             }
