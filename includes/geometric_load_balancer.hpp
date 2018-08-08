@@ -262,12 +262,12 @@ namespace load_balancing {
                     int send_size = data_to_migrate.at(PE).size();
                     if (send_size) {
                         MPI_Request req;
-                        MPI_Ibsend(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, EXCHANGE_TAG, LB_COMM, &req);
+                        MPI_Bsend(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, EXCHANGE_TAG, LB_COMM);
                         reqs.push_back(req);
                     }
                 }
 
-            MPI_Waitall(reqs.size(), &reqs.front(), MPI_STATUSES_IGNORE);
+            //MPI_Waitall(reqs.size(), &reqs.front(), MPI_STATUSES_IGNORE);
             MPI_Barrier(LB_COMM);
 
             int flag = 1;
