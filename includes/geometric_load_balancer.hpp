@@ -430,8 +430,6 @@ namespace load_balancing {
             }
             const double __end = MPI_Wtime();
             if(!caller_rank) std::cout << (__end - __start) << std::endl;
-
-            MPI_Waitall(cpt, &reqs.front(), &statuses.front());
         }
 
         template<int N>
