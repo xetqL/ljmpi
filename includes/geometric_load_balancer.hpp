@@ -253,8 +253,8 @@ namespace load_balancing {
                 data_to_send += data.size();
 
             int bsize;
-            MPI_Pack_size(data_to_send, datatype.elements_datatype, MPI_COMM_WORLD, &bsize);
-            bsize += neighbors.size() * MPI_BSEND_OVERHEAD;
+            MPI_Pack_size(2*data_to_send, datatype.elements_datatype, MPI_COMM_WORLD, &bsize);
+            bsize += wsize * MPI_BSEND_OVERHEAD;
             std::vector<char> buff(bsize);
             MPI_Buffer_attach(&buff.front(), bsize);
             if(data_to_send > 0)
@@ -280,11 +280,9 @@ namespace load_balancing {
 
                 MPI_Get_count(&status, datatype.elements_datatype, &size);
                 buffer.resize(size);
-                std::cout << caller_rank << " " << source_rank << " - " << size << std::endl;
                 MPI_Recv(&buffer.front(), size, datatype.elements_datatype, source_rank, EXCHANGE_TAG, LB_COMM, MPI_STATUS_IGNORE);
                 std::move(buffer.begin(), buffer.end(), std::back_inserter(remote_data_gathered));
             }
-
             //MPI_Waitall(reqs.size(), &reqs.front(), &statuses.front()); //less strict than mpi_barrier
             nb_elements_recv = remote_data_gathered.size();
             int *addr, size;
