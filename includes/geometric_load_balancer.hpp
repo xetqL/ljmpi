@@ -388,6 +388,7 @@ namespace load_balancing {
             std::vector<std::vector<elements::Element<N>>> data_to_migrate(wsize);
             if(neighbors.empty())
                 neighbors = partitioning::utils::unzip(partitioning::geometric::get_neighboring_domains(caller_rank, domains, 0.08)).first;
+
             for(const size_t &PE : neighbors) {
                 if (PE == (size_t) caller_rank) continue; //do not check with myself
                 // check within the remaining elements which belong to the current PE
@@ -404,6 +405,7 @@ namespace load_balancing {
                     } else data_id++; //if the element must stay with me then check the next one
                 }
             }
+
             std::vector<MPI_Request> reqs(neighbors.size());
             std::vector<MPI_Status> statuses(neighbors.size());
 
