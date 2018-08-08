@@ -251,18 +251,15 @@ namespace load_balancing {
             nb_elements_sent = 0;
             for(const size_t &neighbor_idx : neighbors){   //give all my data to neighbors
                 int send_size = data_to_migrate.at(neighbor_idx).size();
-                if(!send_size) continue;
                 nb_elements_sent += send_size;
                 MPI_Isend(&data_to_migrate.at(neighbor_idx).front(), send_size, datatype.elements_datatype, neighbor_idx, 200, LB_COMM, &reqs[cpt]);
                 cpt++;
             }
-            MPI_Barrier(LB_COMM);
+
             cpt=0;
-            int flag = 1;
-            while(flag) {// receive the data in any order
+            while(cpt < nb_neighbors) {// receive the data in any order
                 int source_rank, size;
-                MPI_Iprobe(MPI_ANY_SOURCE, 200, LB_COMM, &flag, &statuses[cpt]);
-                if(!flag) break;
+                MPI_Probe(MPI_ANY_SOURCE, 200, LB_COMM, &statuses[cpt]);
                 source_rank = statuses[cpt].MPI_SOURCE;
                 MPI_Get_count(&statuses[cpt], datatype.elements_datatype, &size);
                 buffer.resize(size);
