@@ -269,6 +269,7 @@ namespace load_balancing {
 
             //MPI_Waitall(reqs.size(), &reqs.front(), MPI_STATUSES_IGNORE);
             MPI_Barrier(LB_COMM);
+            std::cout << caller_rank << std::endl;
 
             int flag = 1;
             while(flag) {// receive the data in any order
