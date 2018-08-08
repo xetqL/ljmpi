@@ -240,7 +240,7 @@ namespace elements {
         auto element_position = element.position;
 
         for(size_t dim = 0; dim < N; ++dim) {
-            if(element_position.at(dim) < domain.at(dim).first || domain.at(dim).second <= element_position.at(dim))
+            if(element_position.at(dim) < domain.at(dim).first || domain.at(dim).second < element_position.at(dim))
                 return false;
         }
 
