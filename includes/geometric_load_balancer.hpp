@@ -406,7 +406,6 @@ namespace load_balancing {
             }
             std::vector<MPI_Request> reqs(neighbors.size());
             std::vector<MPI_Status> statuses(neighbors.size());
-            const double __start = MPI_Wtime();
 
             int cpt = 0, nb_neighbors = neighbors.size();
             for(const size_t &PE : neighbors) {
@@ -415,10 +414,10 @@ namespace load_balancing {
                 MPI_Isend(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, 300, LB_COMM, &reqs[cpt]);
                 cpt++;
             }
-            const double __end = MPI_Wtime();
-            if(!caller_rank) std::cout << (__end - __start) << std::endl;
 
             cpt=0;
+
+            const double __start = MPI_Wtime();
             while(cpt < nb_neighbors) {// receive the data in any order
                 int source_rank, size;
                 MPI_Probe(MPI_ANY_SOURCE, 300, LB_COMM, &statuses[cpt]);
@@ -429,6 +428,9 @@ namespace load_balancing {
                 std::move(buffer.begin(), buffer.end(), std::back_inserter(data));
                 cpt++;
             }
+            const double __end = MPI_Wtime();
+            if(!caller_rank) std::cout << (__end - __start) << std::endl;
+
             MPI_Waitall(cpt, &reqs.front(), &statuses.front());
         }
 
