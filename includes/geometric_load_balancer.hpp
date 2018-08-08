@@ -248,16 +248,24 @@ namespace load_balancing {
             std::vector<MPI_Request> reqs;
             nb_elements_sent = 0;
             const int EXCHANGE_TAG = 200;
+            int data_to_send = 0;
+            for(const auto& data : data_to_migrate)
+                data_to_send += data.size();
 
-            for(const size_t &neighbor_idx : neighbors){   //give all my data to neighbors
-                int send_size = data_to_migrate.at(neighbor_idx).size();
-                if (send_size){
-                    MPI_Request req;
-                    nb_elements_sent += send_size;
-                    MPI_Isend(&data_to_migrate.at(neighbor_idx).front(), send_size, datatype.elements_datatype, neighbor_idx, EXCHANGE_TAG, LB_COMM, &req);
-                    reqs.push_back(req);
+            int bsize;
+            MPI_Pack_size(data_to_send, datatype.elements_datatype, MPI_COMM_WORLD, &bsize);
+            bsize += neighbors.size() * MPI_BSEND_OVERHEAD;
+            std::vector<char> buff(bsize);
+            MPI_Buffer_attach(&buff.front(), bsize);
+            if(data_to_send > 0)
+                for(const size_t &PE : neighbors) {
+                    int send_size = data_to_migrate.at(PE).size();
+                    if (send_size) {
+                        MPI_Request req;
+                        MPI_Ibsend(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, EXCHANGE_TAG, LB_COMM, &req);
+                        reqs.push_back(req);
+                    }
                 }
-            }
 
             MPI_Waitall(reqs.size(), &reqs.front(), MPI_STATUSES_IGNORE);
             MPI_Barrier(LB_COMM);
@@ -276,6 +284,8 @@ namespace load_balancing {
             }
             //MPI_Waitall(reqs.size(), &reqs.front(), &statuses.front()); //less strict than mpi_barrier
             nb_elements_recv = remote_data_gathered.size();
+            int *addr, size;
+            MPI_Buffer_detach(&addr, &size);
             return remote_data_gathered;
         }
 
@@ -416,20 +426,29 @@ namespace load_balancing {
             std::vector<MPI_Request> reqs;
             //std::vector<MPI_Status> statuses(neighbors.size());
             const int MIGRATE_TAG = 300;
-            for(const size_t &PE : neighbors) {
-                int send_size = data_to_migrate.at(PE).size();
-                if (send_size) {
-                    MPI_Request req;
-                    MPI_Isend(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, MIGRATE_TAG, LB_COMM, &req);
-                    MPI_Wait(&req, MPI_STATUS_IGNORE);
-                    reqs.push_back(req);
-                }
-            }
+            int data_to_send = 0;
+            for(const auto& data : data_to_migrate)
+                data_to_send += data.size();
 
-            //MPI_Waitall(reqs.size(), &reqs.front(), MPI_STATUSES_IGNORE);
+            int bsize;
+            MPI_Pack_size(data_to_send, datatype.elements_datatype, MPI_COMM_WORLD, &bsize);
+            bsize += neighbors.size() * MPI_BSEND_OVERHEAD;
+            std::vector<char> buff(bsize);
+            MPI_Buffer_attach(&buff.front(), bsize);
+            if(data_to_send > 0)
+                for(const size_t &PE : neighbors) {
+                    int send_size = data_to_migrate.at(PE).size();
+                    if (send_size) {
+                        MPI_Request req;
+                        MPI_Ibsend(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, MIGRATE_TAG, LB_COMM, &req);
+                        reqs.push_back(req);
+                    }
+                }
+            int flag = 1;
+            MPI_Waitall(reqs.size(), &reqs.front(), MPI_STATUS_IGNORE);
+
             MPI_Barrier(LB_COMM);
 
-            int flag = 1;
             while(flag) {// receive the data in any order
                 int source_rank, size;
                 MPI_Status status;
@@ -441,8 +460,9 @@ namespace load_balancing {
                 MPI_Recv(&buffer.front(), size, datatype.elements_datatype, source_rank, MIGRATE_TAG, LB_COMM, &status);
                 std::move(buffer.begin(), buffer.end(), std::back_inserter(data));
             }
-
             MPI_Barrier(LB_COMM);
+            int *addr, size;
+            MPI_Buffer_detach(&addr, &size);
         }
 
         template<int N>

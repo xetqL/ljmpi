@@ -214,7 +214,6 @@ std::vector<LBSolutionPath<N>> Astar_runner(
 
         }
 
-
         do {
 
             current_node = *queue.begin();                  // Next best node
