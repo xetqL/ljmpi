@@ -325,7 +325,7 @@ namespace load_balancing {
             int cpt = 0;
             for(auto const &pe_data : data_to_migrate) {
                 int send_size = pe_data.second->size();
-                MPI_Isend(&pe_data.second->front(), send_size, datatype.elements_datatype, pe_data.first, 300, LB_COMM, &reqs[cpt]);
+                MPI_Send(&pe_data.second->front(), send_size, datatype.elements_datatype, pe_data.first, 300, LB_COMM);
                 cpt++;
             }
             int collectData = 0;
@@ -340,7 +340,7 @@ namespace load_balancing {
                 MPI_Recv(&buffer.front(), size, datatype.elements_datatype, source_rank, 300, LB_COMM, &status);
                 std::move(buffer.begin(), buffer.end(), std::back_inserter(data));
             }
-            MPI_Waitall(cpt, &reqs.front(), MPI_STATUSES_IGNORE);
+
         }
 
         template<int N> void zoltan_migrate_particles (
@@ -440,12 +440,12 @@ namespace load_balancing {
                     int send_size = data_to_migrate.at(PE).size();
                     if (send_size) {
                         MPI_Request req;
-                        MPI_Ibsend(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, MIGRATE_TAG, LB_COMM, &req);
+                        MPI_Bsend(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, MIGRATE_TAG, LB_COMM);
                         reqs.push_back(req);
                     }
                 }
             int flag = 1;
-            MPI_Waitall(reqs.size(), &reqs.front(), MPI_STATUS_IGNORE);
+            //MPI_Waitall(reqs.size(), &reqs.front(), MPI_STATUS_IGNORE);
 
             MPI_Barrier(LB_COMM);
 
