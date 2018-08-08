@@ -245,29 +245,36 @@ namespace load_balancing {
                 }
             }
 
-            std::vector<MPI_Request> reqs(neighbors.size());
-            std::vector<MPI_Status> statuses(neighbors.size());
-            int cpt = 0, nb_neighbors = neighbors.size();
+            std::vector<MPI_Request> reqs;
             nb_elements_sent = 0;
+            const int EXCHANGE_TAG = 200;
+
             for(const size_t &neighbor_idx : neighbors){   //give all my data to neighbors
                 int send_size = data_to_migrate.at(neighbor_idx).size();
-                nb_elements_sent += send_size;
-                MPI_Isend(&data_to_migrate.at(neighbor_idx).front(), send_size, datatype.elements_datatype, neighbor_idx, 200, LB_COMM, &reqs[cpt]);
-                cpt++;
+                if (send_size){
+                    MPI_Request req;
+                    nb_elements_sent += send_size;
+                    MPI_Isend(&data_to_migrate.at(neighbor_idx).front(), send_size, datatype.elements_datatype, neighbor_idx, EXCHANGE_TAG, LB_COMM, &req);
+                    reqs.push_back(req);
+                }
             }
 
-            cpt=0;
-            while(cpt < nb_neighbors) {// receive the data in any order
+            MPI_Waitall(reqs.size(), &reqs.front(), MPI_STATUSES_IGNORE);
+            MPI_Barrier(LB_COMM);
+
+            int flag = 1;
+            while(flag) {// receive the data in any order
+                MPI_Status status;
                 int source_rank, size;
-                MPI_Probe(MPI_ANY_SOURCE, 200, LB_COMM, &statuses[cpt]);
-                source_rank = statuses[cpt].MPI_SOURCE;
-                MPI_Get_count(&statuses[cpt], datatype.elements_datatype, &size);
+                MPI_Iprobe(MPI_ANY_SOURCE, EXCHANGE_TAG, LB_COMM, &flag, &status);
+                if(!flag) break;
+                source_rank = status.MPI_SOURCE;
+                MPI_Get_count(&status, datatype.elements_datatype, &size);
                 buffer.resize(size);
-                MPI_Recv(&buffer.front(), size, datatype.elements_datatype, source_rank, 200, LB_COMM, &statuses[cpt]);
+                MPI_Recv(&buffer.front(), size, datatype.elements_datatype, source_rank, EXCHANGE_TAG, LB_COMM, MPI_STATUS_IGNORE);
                 std::move(buffer.begin(), buffer.end(), std::back_inserter(remote_data_gathered));
-                cpt++;
             }
-            MPI_Waitall(reqs.size(), &reqs.front(), &statuses.front()); //less strict than mpi_barrier
+            //MPI_Waitall(reqs.size(), &reqs.front(), &statuses.front()); //less strict than mpi_barrier
             nb_elements_recv = remote_data_gathered.size();
             return remote_data_gathered;
         }
@@ -406,29 +413,36 @@ namespace load_balancing {
                 }
             }
 
-            std::vector<MPI_Request> reqs(neighbors.size());
-            std::vector<MPI_Status> statuses(neighbors.size());
-
-            int cpt = 0, nb_neighbors = neighbors.size();
+            std::vector<MPI_Request> reqs;
+            //std::vector<MPI_Status> statuses(neighbors.size());
+            const int MIGRATE_TAG = 300;
             for(const size_t &PE : neighbors) {
                 int send_size = data_to_migrate.at(PE).size();
-                MPI_Isend(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, 300, LB_COMM, &reqs[cpt]);
-                cpt++;
+                if (send_size) {
+                    MPI_Request req;
+                    MPI_Isend(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, MIGRATE_TAG, LB_COMM, &req);
+                    MPI_Wait(&req, MPI_STATUS_IGNORE);
+                    reqs.push_back(req);
+                }
             }
 
-            cpt=0;
+            //MPI_Waitall(reqs.size(), &reqs.front(), MPI_STATUSES_IGNORE);
+            MPI_Barrier(LB_COMM);
 
-            while(cpt < nb_neighbors) {// receive the data in any order
+            int flag = 1;
+            while(flag) {// receive the data in any order
                 int source_rank, size;
-                MPI_Probe(MPI_ANY_SOURCE, 300, LB_COMM, &statuses[cpt]);
-                source_rank = statuses[cpt].MPI_SOURCE;
-                MPI_Get_count(&statuses[cpt], datatype.elements_datatype, &size);
+                MPI_Status status;
+                MPI_Iprobe(MPI_ANY_SOURCE, MIGRATE_TAG, LB_COMM, &flag, &status);
+                if(!flag) break;
+                source_rank = status.MPI_SOURCE;
+                MPI_Get_count(&status, datatype.elements_datatype, &size);
                 buffer.resize(size);
-                MPI_Recv(&buffer.front(), size, datatype.elements_datatype, source_rank, 300, LB_COMM, &statuses[cpt]);
+                MPI_Recv(&buffer.front(), size, datatype.elements_datatype, source_rank, MIGRATE_TAG, LB_COMM, &status);
                 std::move(buffer.begin(), buffer.end(), std::back_inserter(data));
-                cpt++;
             }
 
+            MPI_Barrier(LB_COMM);
         }
 
         template<int N>

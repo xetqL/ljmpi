@@ -125,7 +125,7 @@ std::vector<LBSolutionPath<N>> Astar_runner(
     while (solutions.size() < NB_BEST_SOLUTIONS) {
         auto children = current_node->get_children();
         number_of_visited_node++;
-        for(std::shared_ptr<LBNode<N> >& child : children){
+        for(std::shared_ptr<LBNode<N> >& child : children) {
             if(!child) continue;
             mesh_data = &child->mesh_data;
             domain_boundaries = child->domain;
@@ -206,15 +206,17 @@ std::vector<LBSolutionPath<N>> Astar_runner(
                         child->domain = domain_boundaries; //update the partitioning
                         child->set_cost(child_cost);     //set how much time it costed
                         queue.insert(child);
-
                     }
                     break;
             }
             if(!rank) std::cout << child->cost() << std::endl;
             MPI_Barrier(comm);
+
         }
 
+
         do {
+
             current_node = *queue.begin();                  // Next best node
             queue.erase(queue.begin());                     // Remove it from the queue
             if (is_a_solution(current_node, LAST_ITERATION))// if it is a solution node

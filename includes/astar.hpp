@@ -94,14 +94,14 @@ public:
                         nullptr
                 };
             case NodeType::Computing:
-                if(end_it == 0)
+                /*if(end_it == 0) //starting case to start using the TCP connection ... does not ask me why ...
                     return {
                             std::make_shared<Node<MESH_DATA, Domain>>(end_it, NodeLBDecision::LoadBalance, NodeType::Computing, mesh_data, this->shared_from_this(), domain),
                             std::make_shared<Node<MESH_DATA, Domain>>(end_it, NodeLBDecision::DoNothing,   NodeType::Computing,    mesh_data, this->shared_from_this(), domain)
-                    };
+                    };*/
 
-                if(start_it == 0 && decision == NodeLBDecision::LoadBalance)
-                    return {nullptr, nullptr};
+                //if(start_it == 0 && decision == NodeLBDecision::LoadBalance)
+                //    return {nullptr, nullptr};
 
                 return {
                         std::make_shared<Node<MESH_DATA, Domain>>(end_it, NodeLBDecision::LoadBalance, NodeType::Partitioning, mesh_data, this->shared_from_this(), domain),
