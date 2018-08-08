@@ -444,6 +444,7 @@ namespace load_balancing {
                         reqs.push_back(req);
                     }
                 }
+
             int flag = 1;
             //MPI_Waitall(reqs.size(), &reqs.front(), MPI_STATUS_IGNORE);
 
@@ -455,12 +456,13 @@ namespace load_balancing {
                 MPI_Iprobe(MPI_ANY_SOURCE, MIGRATE_TAG, LB_COMM, &flag, &status);
                 if(!flag) break;
                 source_rank = status.MPI_SOURCE;
+
                 MPI_Get_count(&status, datatype.elements_datatype, &size);
                 buffer.resize(size);
                 MPI_Recv(&buffer.front(), size, datatype.elements_datatype, source_rank, MIGRATE_TAG, LB_COMM, &status);
                 std::move(buffer.begin(), buffer.end(), std::back_inserter(data));
             }
-            MPI_Barrier(LB_COMM);
+
             int *addr, size;
             MPI_Buffer_detach(&addr, &size);
         }
