@@ -277,8 +277,10 @@ namespace load_balancing {
                 MPI_Iprobe(MPI_ANY_SOURCE, EXCHANGE_TAG, LB_COMM, &flag, &status);
                 if(!flag) break;
                 source_rank = status.MPI_SOURCE;
+
                 MPI_Get_count(&status, datatype.elements_datatype, &size);
                 buffer.resize(size);
+                std::cout << caller_rank << " " << source_rank << " - " << size << std::endl;
                 MPI_Recv(&buffer.front(), size, datatype.elements_datatype, source_rank, EXCHANGE_TAG, LB_COMM, MPI_STATUS_IGNORE);
                 std::move(buffer.begin(), buffer.end(), std::back_inserter(remote_data_gathered));
             }
