@@ -147,6 +147,7 @@ inline void zoltan_load_balance(MESH_DATA<N>* mesh_data,
                         &exportLocalGids,   /* Local IDs of the vertices I must send */
                         &exportProcs,       /* Process to which I send each of the vertices */
                         &exportToPart);     /* Partition to which each vertex will belong */
+
     if(changes) for(int part = 0; part < nproc; ++part) {
             Zoltan_RCB_Box(load_balancer, part, &dim, &xmin, &ymin, &zmin, &xmax, &ymax, &zmax);
             auto domain = partitioning::geometric::borders_to_domain<N>(xmin, ymin, zmin, xmax, ymax, zmax, params->simsize);

@@ -172,15 +172,14 @@ std::vector<LBSolutionPath<N>> Astar_runner(
                         for (int i = 0; i < npframe; ++i) {
                             MPI_Barrier(comm);
                             const double __start = MPI_Wtime();
-                            load_balancing::geometric::migrate_particles<N>(mesh_data->els, domain_boundaries, datatype, comm);
+                            if(i > 0 || frame_id > 0)
+                                load_balancing::geometric::migrate_particles<N>(mesh_data->els, domain_boundaries, datatype, comm);
                             MPI_Barrier(comm);
-                            const double __cpt_start = MPI_Wtime();
 
                             computation_info = lennard_jones::compute_one_step<N>(mesh_data, plklist, domain_boundaries, datatype,
                                                                                   params, comm, frame);
 
                             const double my_iteration_time = MPI_Wtime() - __start;
-                            MPI_Barrier(comm);
 
                             std::tie(complexity, received, sent) = computation_info;
 
