@@ -413,7 +413,6 @@ namespace load_balancing {
             for(const size_t &PE : neighbors) {
                 int send_size = data_to_migrate.at(PE).size();
                 if (!send_size) continue;
-                //if (send_size) std::cout << caller_rank<< " " <<send_size << " to " << PE  << std::endl;
                 MPI_Isend(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, 300, LB_COMM, &reqs[cpt]);
                 cpt++;
             }
@@ -431,14 +430,13 @@ namespace load_balancing {
             }*/
 
             MPI_Barrier(LB_COMM);
-            const double __start = MPI_Wtime();
 
             cpt=0;
             int flag = 1;
             while(flag) {// receive the data in any order
                 int source_rank, size;
                 MPI_Iprobe(MPI_ANY_SOURCE, 200, LB_COMM, &flag, &statuses[cpt]);
-                if(!flag) break;
+                if (!flag) break;
                 source_rank = statuses[cpt].MPI_SOURCE;
                 MPI_Get_count(&statuses[cpt], datatype.elements_datatype, &size);
                 buffer.resize(size);
@@ -446,9 +444,7 @@ namespace load_balancing {
                 std::move(buffer.begin(), buffer.end(), std::back_inserter(data));
                 cpt++;
             }
-            MPI_Barrier(LB_COMM);
 
-            std::cout << MPI_Wtime() - __start << std::endl;
 
         }
 
