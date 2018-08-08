@@ -386,7 +386,6 @@ namespace load_balancing {
 
             std::vector<elements::Element<N>> buffer;
             std::vector<std::vector<elements::Element<N>>> data_to_migrate(wsize);
-            const double __start = MPI_Wtime();
 
             if(neighbors.empty())
                 neighbors = partitioning::utils::unzip(partitioning::geometric::get_neighboring_domains(caller_rank, domains, 0.08)).first;
@@ -419,7 +418,6 @@ namespace load_balancing {
                 cpt++;
             }
 
-            std::cout << MPI_Wtime() - __start << std::endl;
 
             /*while(cpt < nb_neighbors) {// receive the data in any order
                 int source_rank, size;
@@ -433,6 +431,7 @@ namespace load_balancing {
             }*/
 
             MPI_Barrier(LB_COMM);
+            const double __start = MPI_Wtime();
 
             cpt=0;
             int flag = 1;
@@ -447,6 +446,10 @@ namespace load_balancing {
                 std::move(buffer.begin(), buffer.end(), std::back_inserter(data));
                 cpt++;
             }
+            MPI_Barrier(LB_COMM);
+
+            std::cout << MPI_Wtime() - __start << std::endl;
+
         }
 
         template<int N>
