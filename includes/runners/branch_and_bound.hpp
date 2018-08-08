@@ -181,7 +181,7 @@ std::vector<LBSolutionPath<N>> Astar_runner(
 
                             const double my_iteration_time = MPI_Wtime() - __start;
                             MPI_Barrier(comm);
-                            if(!rank) std::cout << my_iteration_time << std::endl;
+                            if(!rank) std::cout << MPI_Wtime() - __start << std::endl;
 
                             std::tie(complexity, received, sent) = computation_info;
 
