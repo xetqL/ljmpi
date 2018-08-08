@@ -429,7 +429,7 @@ namespace load_balancing {
                 cpt++;
             }
             const double __end = MPI_Wtime();
-            if(!caller_rank) std::cout << (__end - __start) << std::endl;
+            std::cout << (__end - __start) << std::endl;
         }
 
         template<int N>
