@@ -418,7 +418,7 @@ namespace load_balancing {
             cpt=0;
 
             const double __start = MPI_Wtime();
-            while(cpt < nb_neighbors) {// receive the data in any order
+            /*while(cpt < nb_neighbors) {// receive the data in any order
                 int source_rank, size;
                 MPI_Probe(MPI_ANY_SOURCE, 300, LB_COMM, &statuses[cpt]);
                 source_rank = statuses[cpt].MPI_SOURCE;
@@ -427,7 +427,23 @@ namespace load_balancing {
                 MPI_Recv(&buffer.front(), size, datatype.elements_datatype, source_rank, 300, LB_COMM, &statuses[cpt]);
                 std::move(buffer.begin(), buffer.end(), std::back_inserter(data));
                 cpt++;
+            }*/
+
+            MPI_Barrier(LB_COMM);
+            cpt=0;
+            int flag = 1;
+            while(flag) {// receive the data in any order
+                int source_rank, size;
+                MPI_Iprobe(MPI_ANY_SOURCE, 200, LB_COMM, &flag, &statuses[cpt]);
+                if(!flag) break;
+                source_rank = statuses[cpt].MPI_SOURCE;
+                MPI_Get_count(&statuses[cpt], datatype.elements_datatype, &size);
+                buffer.resize(size);
+                MPI_Recv(&buffer.front(), size, datatype.elements_datatype, source_rank, 200, LB_COMM, &statuses[cpt]);
+                std::move(buffer.begin(), buffer.end(), std::back_inserter(data));
+                cpt++;
             }
+
             const double __end = MPI_Wtime();
             std::cout << (__end - __start) << std::endl;
         }
