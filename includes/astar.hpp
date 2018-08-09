@@ -22,7 +22,7 @@ public:
 
     int start_it, end_it;
     std::shared_ptr<Node<MESH_DATA, Domain>> parent;
-
+    SlidingWindow<double> window_gini_times, window_gini_complexities , window_times, window_gini_communications;
     NodeLBDecision decision;          // Y / N boolean
     NodeType type;
 
@@ -66,9 +66,12 @@ public:
 
     Node (int startit, NodeLBDecision decision, NodeType type,
           MESH_DATA mesh_data, std::shared_ptr<Node<MESH_DATA, Domain>> p, Domain domain) :
-            start_it(startit),
-            end_it(startit),
+            start_it(startit), end_it(startit),
             parent(p),
+            window_gini_times(p->window_gini_times),
+            window_gini_complexities(p->window_gini_complexities),
+            window_times(p->window_times),
+            window_gini_communications(p->window_gini_communications),
             decision(decision),
             type(type),
             concrete_cost(parent->concrete_cost),
@@ -77,10 +80,17 @@ public:
             domain(domain),
             lb(Zoltan_Copy(parent->lb)){};
 
-    Node(MESH_DATA mesh_data, Domain domain, Zoltan_Struct* zz):
+    Node(MESH_DATA mesh_data, Domain domain, Zoltan_Struct* zz, int size) :
             start_it(0), end_it(0), parent(nullptr),
+            window_gini_times(SlidingWindow<double>(size)),
+            window_gini_complexities(SlidingWindow<double>(size)),
+            window_times(SlidingWindow<double>(size)),
+            window_gini_communications(SlidingWindow<double>(size)),
             decision(NodeLBDecision::LoadBalance), type(NodeType::Computing),
-            mesh_data(mesh_data),  domain(domain), lb(zz) {}
+            mesh_data(mesh_data),  domain(domain), lb(zz)
+
+    {
+    }
 
     ~Node() {
         Zoltan_Destroy(&lb);
@@ -96,16 +106,16 @@ public:
             case NodeType::Computing:
                 if(end_it == 0) //starting case to start using the TCP connection ... does not ask me why ...
                     return {
-                            std::make_shared<Node<MESH_DATA, Domain>>(end_it, NodeLBDecision::LoadBalance, NodeType::Computing, mesh_data, this->shared_from_this(), domain),
-                            std::make_shared<Node<MESH_DATA, Domain>>(end_it, NodeLBDecision::DoNothing,   NodeType::Computing,    mesh_data, this->shared_from_this(), domain)
+                        std::make_shared<Node<MESH_DATA, Domain>>(end_it, NodeLBDecision::LoadBalance, NodeType::Computing, mesh_data, this->shared_from_this(), domain),
+                        std::make_shared<Node<MESH_DATA, Domain>>(end_it, NodeLBDecision::DoNothing,   NodeType::Computing, mesh_data, this->shared_from_this(), domain)
                     };
 
                 if(start_it == 0 && decision == NodeLBDecision::LoadBalance)
                     return {nullptr, nullptr};
 
                 return {
-                        std::make_shared<Node<MESH_DATA, Domain>>(end_it, NodeLBDecision::LoadBalance, NodeType::Partitioning, mesh_data, this->shared_from_this(), domain),
-                        std::make_shared<Node<MESH_DATA, Domain>>(end_it, NodeLBDecision::DoNothing,   NodeType::Computing,    mesh_data, this->shared_from_this(), domain)
+                    std::make_shared<Node<MESH_DATA, Domain>>(end_it, NodeLBDecision::LoadBalance, NodeType::Partitioning, mesh_data, this->shared_from_this(), domain),
+                    std::make_shared<Node<MESH_DATA, Domain>>(end_it, NodeLBDecision::DoNothing,   NodeType::Computing,    mesh_data, this->shared_from_this(), domain)
                 };
 
         }

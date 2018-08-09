@@ -301,12 +301,12 @@ RealType variance(Container c){
     return var / s;
 };
 
-template<class RealType>
+template<class RealType, class PtrOnWindow>
 std::vector<RealType>
-all_compute_metrics(std::shared_ptr<SlidingWindow<RealType>> window_times,
-                    std::shared_ptr<SlidingWindow<RealType>> window_gini_times,
-                    std::shared_ptr<SlidingWindow<RealType>> window_gini_complexities,
-                    std::shared_ptr<SlidingWindow<RealType>> window_gini_communications,
+all_compute_metrics(PtrOnWindow window_times,
+                    PtrOnWindow window_gini_times,
+                    PtrOnWindow window_gini_complexities,
+                    PtrOnWindow window_gini_communications,
                     RealType true_iteration_time, std::vector<RealType> times, RealType mu_interaction_time,
                     int sent, int received, int complexity, MPI_Comm comm) {
     int nproc = 0;

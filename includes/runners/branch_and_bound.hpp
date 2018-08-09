@@ -94,10 +94,7 @@ std::vector<LBSolutionPath<N>> Astar_runner(
     std::multiset<std::shared_ptr<LBNode<N> >, Compare<MESH_DATA<N>, Domain<N>> > queue;
 
     std::shared_ptr<SlidingWindow<double>>
-            window_gini_times = std::make_shared<SlidingWindow<double>>(params->npframe / 2),
-            window_gini_complexities = std::make_shared<SlidingWindow<double>>(params->npframe / 2),
-            window_times = std::make_shared<SlidingWindow<double>>(params->npframe / 2),
-            window_gini_communications = std::make_shared<SlidingWindow<double>>(params->npframe / 2);
+            window_gini_times, window_gini_complexities, window_times, window_gini_communications;
 
     std::vector<double>
             dataset_entry(N_FEATURES + N_LABEL),
@@ -112,7 +109,7 @@ std::vector<LBSolutionPath<N>> Astar_runner(
     zoltan_load_balance<N>(p_mesh_data, domain_boundaries, p_load_balancer, nproc, params, datatype, comm);
     MPI_Barrier(comm);
 
-    std::shared_ptr<LBNode<N> > current_node = std::make_shared<LBNode<N>>(*p_mesh_data, domain_boundaries, p_load_balancer), solution;
+    std::shared_ptr<LBNode<N> > current_node = std::make_shared<LBNode<N>>(*p_mesh_data, domain_boundaries, p_load_balancer, npframe), solution;
     std::vector<std::shared_ptr<LBNode<N> > > solutions;
 
     current_node->metrics_before_decision = dataset_entry;
@@ -127,6 +124,12 @@ std::vector<LBSolutionPath<N>> Astar_runner(
         number_of_visited_node++;
         for(std::shared_ptr<LBNode<N> >& child : children) {
             if(!child) continue;
+
+            auto window_gini_times = &child->window_gini_times;
+            auto window_gini_complexities=&child->window_gini_complexities;
+            auto window_times=&child->window_times;
+            auto window_gini_communications=&child->window_gini_communications;
+
             mesh_data = &child->mesh_data;
             domain_boundaries = child->domain;
 
