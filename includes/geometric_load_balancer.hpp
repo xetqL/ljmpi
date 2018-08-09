@@ -283,7 +283,8 @@ namespace load_balancing {
                 MPI_Recv(&buffer.front(), size, datatype.elements_datatype, source_rank, EXCHANGE_TAG, LB_COMM, MPI_STATUS_IGNORE);
                 std::move(buffer.begin(), buffer.end(), std::back_inserter(remote_data_gathered));
             }
-            //MPI_Waitall(reqs.size(), &reqs.front(), &statuses.front()); //less strict than mpi_barrier
+
+            MPI_Barrier(LB_COMM);
             nb_elements_recv = remote_data_gathered.size();
             int *addr, size;
             MPI_Buffer_detach(&addr, &size);
