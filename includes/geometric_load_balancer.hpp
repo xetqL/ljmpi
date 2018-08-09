@@ -264,6 +264,7 @@ namespace load_balancing {
                         MPI_Request req;
                         MPI_Bsend(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, EXCHANGE_TAG, LB_COMM);
                         reqs.push_back(req);
+                        std::cout << buff.size() << std::endl;
                     }
                 }
 
@@ -284,11 +285,10 @@ namespace load_balancing {
             }
 
             MPI_Barrier(LB_COMM);
-
+            if(buff.size() > 0) std::cout << caller_rank << " " << buff.size() << std::endl;
             nb_elements_recv = remote_data_gathered.size();
             int *addr, size;
             MPI_Buffer_detach(&addr, &size);
-            std::cout << caller_rank << std::endl;
             return remote_data_gathered;
         }
 
