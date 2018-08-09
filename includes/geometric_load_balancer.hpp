@@ -277,7 +277,6 @@ namespace load_balancing {
                 MPI_Iprobe(MPI_ANY_SOURCE, EXCHANGE_TAG, LB_COMM, &flag, &status);
                 if(!flag) break;
                 source_rank = status.MPI_SOURCE;
-
                 MPI_Get_count(&status, datatype.elements_datatype, &size);
                 buffer.resize(size);
                 MPI_Recv(&buffer.front(), size, datatype.elements_datatype, source_rank, EXCHANGE_TAG, LB_COMM, MPI_STATUS_IGNORE);
@@ -285,10 +284,11 @@ namespace load_balancing {
             }
 
             MPI_Barrier(LB_COMM);
-            std::cout << caller_rank << std::endl;
+
             nb_elements_recv = remote_data_gathered.size();
             int *addr, size;
             MPI_Buffer_detach(&addr, &size);
+            std::cout << caller_rank << std::endl;
             return remote_data_gathered;
         }
 
