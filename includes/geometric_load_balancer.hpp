@@ -285,6 +285,7 @@ namespace load_balancing {
             }
 
             MPI_Barrier(LB_COMM);
+            std::cout << caller_rank << std::endl;
             nb_elements_recv = remote_data_gathered.size();
             int *addr, size;
             MPI_Buffer_detach(&addr, &size);
