@@ -366,6 +366,7 @@ namespace load_balancing {
                 MPI_Send(&pe_data.second->front(), send_size, datatype.elements_datatype, pe_data.first, 300, LB_COMM);
                 cpt++;
             }
+
             int collectData = 0;
             while(collectData < numImport) {// receive the data in any order
                 int source_rank, size;
@@ -535,8 +536,6 @@ namespace load_balancing {
 
             if(!snd_reqs.empty())
                 MPI_Waitall(snd_reqs.size(), &snd_reqs.front(), MPI_STATUSES_IGNORE);
-
-            //MPI_Barrier(LB_COMM);
 
             int *addr, size;
             MPI_Buffer_detach(&addr, &size);
