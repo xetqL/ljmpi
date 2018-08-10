@@ -252,12 +252,6 @@ namespace load_balancing {
             for(const auto& data : data_to_migrate)
                 data_to_send += data.size();
 
-            int bsize;
-            MPI_Pack_size(2 * data_to_send, datatype.elements_datatype, MPI_COMM_WORLD, &bsize);
-            bsize += wsize * MPI_BSEND_OVERHEAD;
-            std::vector<char> buff(bsize);
-            MPI_Buffer_attach(&buff.front(), bsize);
-
             std::unordered_map<int, int> receive_data_size_lookup;
 
             std::vector<MPI_Request> snd_reqs, rcv_reqs; //all sends that MUST complete!
@@ -301,7 +295,7 @@ namespace load_balancing {
                     int send_size = data_to_migrate.at(PE).size();
                     if (send_size) {
                         MPI_Request req;
-                        MPI_Ibsend(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, EXCHANGE_TAG, LB_COMM, &req);
+                        MPI_Isend(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, EXCHANGE_TAG, LB_COMM, &req);
                         snd_reqs.push_back(req);
                     }
                 }
@@ -322,8 +316,8 @@ namespace load_balancing {
             //MPI_Barrier(LB_COMM);
 
             nb_elements_recv = remote_data_gathered.size();
-            int *addr, size;
-            MPI_Buffer_detach(&addr, &size);
+            //int *addr, size;
+            //MPI_Buffer_detach(&addr, &size);
             return remote_data_gathered;
         }
 
@@ -470,12 +464,6 @@ namespace load_balancing {
             for(const auto& data : data_to_migrate)
                 data_to_send += data.size();
 
-            int bsize;
-            MPI_Pack_size(2 * data_to_send, datatype.elements_datatype, MPI_COMM_WORLD, &bsize);
-            bsize += wsize * MPI_BSEND_OVERHEAD;
-            std::vector<char> buff(bsize);
-            MPI_Buffer_attach(&buff.front(), bsize);
-
             std::unordered_map<int, int> receive_data_size_lookup;
 
             std::vector<MPI_Request> snd_reqs, rcv_reqs; //all sends that MUST complete!
@@ -519,7 +507,7 @@ namespace load_balancing {
                     int send_size = data_to_migrate.at(PE).size();
                     if (send_size) {
                         MPI_Request req;
-                        MPI_Ibsend(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, MIGRATE_TAG, LB_COMM, &req);
+                        MPI_Isend(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, MIGRATE_TAG, LB_COMM, &req);
                         snd_reqs.push_back(req);
                     }
                 }
@@ -537,8 +525,6 @@ namespace load_balancing {
             if(!snd_reqs.empty())
                 MPI_Waitall(snd_reqs.size(), &snd_reqs.front(), MPI_STATUSES_IGNORE);
 
-            int *addr, size;
-            MPI_Buffer_detach(&addr, &size);
         }
 
         template<int N>

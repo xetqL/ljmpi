@@ -58,8 +58,8 @@ int create_cell_linkedlist(
     long long cell_of_particle;
 
     plist.clear();
-    size_t local_size = local_elements.size(),
-            remote_size = remote_elements.size();
+    const size_t local_size = local_elements.size(),
+                 remote_size = remote_elements.size();
     for (size_t cpt = 0; cpt < local_size + remote_size; ++cpt) {
         auto const& particle = cpt >= local_size ? remote_elements[cpt-local_size] : local_elements[cpt];
 
