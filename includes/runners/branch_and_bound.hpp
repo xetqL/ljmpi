@@ -183,7 +183,7 @@ std::vector<LBSolutionPath<N>> Astar_runner(
 
                             MPI_Barrier(comm);
 
-                            //computation_info = lennard_jones::compute_one_step<N>(mesh_data, plklist, domain_boundaries, datatype, params, comm, frame);
+                            computation_info = lennard_jones::compute_one_step<N>(mesh_data, plklist, domain_boundaries, datatype, params, comm, frame);
 
                             const double my_iteration_time = MPI_Wtime() - __start;
 
