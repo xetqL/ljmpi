@@ -476,7 +476,7 @@ namespace load_balancing {
             int data_to_send = 0;
             for(const auto& data : data_to_migrate)
                 data_to_send += data.size();
-            std::cout << data_to_send << std::endl;
+            //std::cout << data_to_send << std::endl;
             std::unordered_map<int, int> receive_data_size_lookup;
 
             std::vector<MPI_Request> snd_reqs, rcv_reqs; //all sends that MUST complete!
