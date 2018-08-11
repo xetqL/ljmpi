@@ -510,11 +510,12 @@ namespace load_balancing {
                 //continue if it is me or it sends me nothing
                 if(PE == (size_t) caller_rank || datasize <= 0) continue;
                 MPI_Request req;
-                rcv_buffer.emplace(PE, std::make_shared<std::vector<elements::Element<N>>>(datasize));
-                MPI_Irecv(&rcv_buffer[PE]->front(), datasize, datatype.elements_datatype, PE, MIGRATE_TAG, LB_COMM, &req);
+                auto buff = std::make_shared<std::vector<elements::Element<N>>>(datasize);
+                MPI_Irecv(&buff->front(), datasize, datatype.elements_datatype, PE, MIGRATE_TAG, LB_COMM, &req);
+                rcv_buffer.insert(std::make_pair(PE, buff));
+
                 rcv_reqs.push_back(req);
             }
-
             //send actual data to dst
             if(data_to_send > 0)
                 for(const size_t &PE : neighbors) {
@@ -532,14 +533,14 @@ namespace load_balancing {
                 while(rcv_cpt < rcv_size) {
                     int idx; MPI_Status status;
                     MPI_Waitany(rcv_size, &rcv_reqs.front(), &idx, &status);
-                    std::cout << status.MPI_SOURCE << std::endl;
                     std::move(rcv_buffer[status.MPI_SOURCE]->begin(), rcv_buffer[status.MPI_SOURCE]->end(), std::back_inserter(data));
                     rcv_cpt++;
                 }
             }
 
-            if(!snd_reqs.empty())
-                MPI_Waitall(snd_reqs.size(), &snd_reqs.front(), MPI_STATUSES_IGNORE);
+            //if(!snd_reqs.empty())
+            //    MPI_Waitall(snd_reqs.size(), &snd_reqs.front(), MPI_STATUSES_IGNORE);
+
 
         }
 
