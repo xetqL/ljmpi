@@ -500,26 +500,42 @@ namespace load_balancing {
                 MPI_Test(&req, &flag, MPI_STATUS_IGNORE);
                 if(!flag) MPI_Cancel(&req);
             }
+
             rcv_reqs.clear();
+
+            //Receive data from PE that sends more than 0 bytes
+            std::map<int, std::shared_ptr<std::vector<elements::Element<N>>>>  rcv_buffer;
+            for (size_t PE = 0; PE < wsize; ++PE) {
+                const int datasize = receive_data_size_lookup[PE];
+                //continue if it is me or it sends me nothing
+                if(PE == (size_t) caller_rank || datasize <= 0) continue;
+                MPI_Request req;
+                rcv_buffer.emplace(PE, std::make_shared<std::vector<elements::Element<N>>>(datasize));
+                MPI_Irecv(&rcv_buffer[PE]->front(), datasize, datatype.elements_datatype, PE, MIGRATE_TAG, LB_COMM, &req);
+                rcv_reqs.push_back(req);
+            }
+
             //send actual data to dst
             if(data_to_send > 0)
                 for(const size_t &PE : neighbors) {
                     int send_size = data_to_migrate.at(PE).size();
                     if (send_size) {
                         MPI_Request req;
-                        MPI_Isend(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, MIGRATE_TAG, LB_COMM, &req);
+                        MPI_Send(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, MIGRATE_TAG, LB_COMM);
                         snd_reqs.push_back(req);
                     }
                 }
 
-            //Receive data from PE that sends more than 0 bytes
-            for (size_t PE = 0; PE < wsize; ++PE) {
-                const int datasize = receive_data_size_lookup[PE];
-                //continue if it is me or it sends me nothing
-                if(PE == (size_t) caller_rank || datasize <= 0) continue;
-                buffer.resize(datasize);
-                MPI_Recv(&buffer.front(), datasize, datatype.elements_datatype, PE, MIGRATE_TAG, LB_COMM, MPI_STATUS_IGNORE);
-                std::move(buffer.begin(), buffer.end(), std::back_inserter(data));
+            int rcv_cpt = 0;
+            if(!rcv_reqs.empty()){
+                const int rcv_size = rcv_reqs.size();
+                while(rcv_cpt < rcv_size) {
+                    int idx; MPI_Status status;
+                    MPI_Waitany(rcv_size, &rcv_reqs.front(), &idx, &status);
+                    std::cout << status.MPI_SOURCE << std::endl;
+                    std::move(rcv_buffer[status.MPI_SOURCE]->begin(), rcv_buffer[status.MPI_SOURCE]->end(), std::back_inserter(data));
+                    rcv_cpt++;
+                }
             }
 
             if(!snd_reqs.empty())
