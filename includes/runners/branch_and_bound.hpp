@@ -179,12 +179,11 @@ std::vector<LBSolutionPath<N>> Astar_runner(
 
                             MPI_Barrier(comm);
 
-                            computation_info = lennard_jones::compute_one_step<N>(mesh_data, plklist, domain_boundaries, datatype,
-                                                                                  params, comm, frame);
+                            //computation_info = lennard_jones::compute_one_step<N>(mesh_data, plklist, domain_boundaries, datatype, params, comm, frame);
 
                             const double my_iteration_time = MPI_Wtime() - __start;
 
-                            std::tie(complexity, received, sent) = computation_info;
+                            std::tie(complexity, received, sent) = {0,0,0}; //computation_info;
 
                             MPI_Allgather(&my_iteration_time, 1, MPI_DOUBLE, &times.front(), 1, MPI_DOUBLE, comm);
                             true_iteration_time = *std::max_element(times.begin(), times.end());
