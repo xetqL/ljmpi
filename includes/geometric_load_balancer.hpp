@@ -448,6 +448,8 @@ namespace load_balancing {
             int wsize; MPI_Comm_size(LB_COMM, &wsize);
             int caller_rank; MPI_Comm_rank(LB_COMM, &caller_rank);
 
+            if(!caller_rank) std::cout << "Start migrate" << std::endl;
+
             std::vector<std::vector<elements::Element<N>>> data_to_migrate(wsize);
 
             auto neighbors = partitioning::utils::unzip(partitioning::geometric::get_neighboring_domains(caller_rank, domains, 0.08)).first;
@@ -553,6 +555,7 @@ namespace load_balancing {
             int sz = data.size(), r;
             MPI_Reduce(&sz, &r, 1, MPI_INT, MPI_SUM, 0, LB_COMM);
             if(!caller_rank) std::cout << r << std::endl;
+            MPI_Barrier(LB_COMM);
         }
 
         template<int N>
