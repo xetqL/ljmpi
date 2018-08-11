@@ -471,6 +471,10 @@ namespace load_balancing {
                 }
             }
 
+            MPI_Barrier(LB_COMM);
+
+            if(!caller_rank) std::cout << "End cpt migration" << std::endl;
+
             std::vector<MPI_Request> reqs;
             //std::vector<MPI_Status> statuses(neighbors.size());
             const int MIGRATE_TAG = 300, PRE_MIGRATE_TAG=301;
@@ -508,6 +512,8 @@ namespace load_balancing {
 
             MPI_Barrier(LB_COMM);
 
+            if(!caller_rank) std::cout << "End size comm." << std::endl;
+
             snd_reqs.clear();
             //Clear request to wrong PE
             for(auto& req : rcv_reqs) {
@@ -530,17 +536,23 @@ namespace load_balancing {
                 rcv_buffer.insert(std::make_pair(PE, buff));
                 rcv_reqs.push_back(req);
             }
+            MPI_Barrier(LB_COMM);
+
+            if(!caller_rank) std::cout << "End recv phase comm." << std::endl;
             //send actual data to dst
             if(data_to_send > 0)
                 for(const size_t &PE : neighbors) {
                     int send_size = data_to_migrate.at(PE).size();
                     if (send_size) {
                         MPI_Request req;
-                        MPI_Ssend(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, MIGRATE_TAG, LB_COMM);
+                        MPI_Send(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, MIGRATE_TAG, LB_COMM);
                         data_to_migrate[PE].clear();
                         snd_reqs.push_back(req);
                     }
                 }
+            MPI_Barrier(LB_COMM);
+
+            if(!caller_rank) std::cout << "End send phase comm." << std::endl;
 
             int rcv_cpt = 0;
             if(!rcv_reqs.empty()){
@@ -552,10 +564,10 @@ namespace load_balancing {
                     rcv_cpt++;
                 }
             }
-            int sz = data.size(), r;
-            MPI_Reduce(&sz, &r, 1, MPI_INT, MPI_SUM, 0, LB_COMM);
-            if(!caller_rank) std::cout << r << std::endl;
+
             MPI_Barrier(LB_COMM);
+
+            if(!caller_rank) std::cout << "End migration." << std::endl;
         }
 
         template<int N>
