@@ -513,7 +513,6 @@ namespace load_balancing {
                 auto buff = std::make_shared<std::vector<elements::Element<N>>>(datasize);
                 MPI_Irecv(&buff->front(), datasize, datatype.elements_datatype, PE, MIGRATE_TAG, LB_COMM, &req);
                 rcv_buffer.insert(std::make_pair(PE, buff));
-
                 rcv_reqs.push_back(req);
             }
             //send actual data to dst
@@ -522,7 +521,7 @@ namespace load_balancing {
                     int send_size = data_to_migrate.at(PE).size();
                     if (send_size) {
                         MPI_Request req;
-                        MPI_Send(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, MIGRATE_TAG, LB_COMM);
+                        MPI_Ssend(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, MIGRATE_TAG, LB_COMM);
                         snd_reqs.push_back(req);
                     }
                 }
