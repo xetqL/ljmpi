@@ -550,6 +550,9 @@ namespace load_balancing {
                     rcv_cpt++;
                 }
             }
+            int sz = data.size(), r;
+            MPI_Reduce(&sz, &r, 1, MPI_INT, MPI_SUM, 0, LB_COMM);
+            if(!rank) std::cout << r << std::endl;
         }
 
         template<int N>
