@@ -125,10 +125,10 @@ std::vector<LBSolutionPath<N>> Astar_runner(
         for(std::shared_ptr<LBNode<N> >& child : children) {
             if(!child) continue;
 
-            auto window_gini_times = &child->window_gini_times;
-            auto window_gini_complexities=&child->window_gini_complexities;
-            auto window_times=&child->window_times;
-            auto window_gini_communications=&child->window_gini_communications;
+            window_gini_times = child->window_gini_times;
+            window_gini_complexities = child->window_gini_complexities;
+            window_times = child->window_times;
+            window_gini_communications = child->window_gini_communications;
 
             mesh_data = &child->mesh_data;
             domain_boundaries = child->domain;

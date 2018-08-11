@@ -451,6 +451,7 @@ namespace load_balancing {
 
             std::vector<elements::Element<N>> buffer;
             std::vector<std::vector<elements::Element<N>>> data_to_migrate(wsize);
+
             if(neighbors.empty())
                 neighbors = partitioning::utils::unzip(partitioning::geometric::get_neighboring_domains(caller_rank, domains, 0.08)).first;
 
