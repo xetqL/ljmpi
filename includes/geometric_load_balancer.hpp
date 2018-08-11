@@ -444,16 +444,13 @@ namespace load_balancing {
         void migrate_particles(std::vector<elements::Element<N>> &data,
                                const std::vector<partitioning::geometric::Domain<N>> &domains,
                                const partitioning::CommunicationDatatype datatype,
-                               const MPI_Comm LB_COMM,
-                               std::vector<size_t> neighbors = std::vector<size_t>()) {
+                               const MPI_Comm LB_COMM) {
             int wsize; MPI_Comm_size(LB_COMM, &wsize);
             int caller_rank; MPI_Comm_rank(LB_COMM, &caller_rank);
 
-            std::vector<elements::Element<N>> buffer;
             std::vector<std::vector<elements::Element<N>>> data_to_migrate(wsize);
 
-            if(neighbors.empty())
-                neighbors = partitioning::utils::unzip(partitioning::geometric::get_neighboring_domains(caller_rank, domains, 0.08)).first;
+            auto neighbors = partitioning::utils::unzip(partitioning::geometric::get_neighboring_domains(caller_rank, domains, 0.08)).first;
 
             for(const size_t &PE : neighbors) {
                 if (PE == (size_t) caller_rank) continue; //do not check with myself
@@ -479,7 +476,7 @@ namespace load_balancing {
             int data_to_send = 0;
             for(const auto& data : data_to_migrate)
                 data_to_send += data.size();
-
+            std::cout << data_to_send << std::endl;
             std::unordered_map<int, int> receive_data_size_lookup;
 
             std::vector<MPI_Request> snd_reqs, rcv_reqs; //all sends that MUST complete!
@@ -538,6 +535,7 @@ namespace load_balancing {
                     if (send_size) {
                         MPI_Request req;
                         MPI_Ssend(&data_to_migrate.at(PE).front(), send_size, datatype.elements_datatype, PE, MIGRATE_TAG, LB_COMM);
+                        data_to_migrate[PE].clear();
                         snd_reqs.push_back(req);
                     }
                 }
@@ -552,11 +550,6 @@ namespace load_balancing {
                     rcv_cpt++;
                 }
             }
-
-            //if(!snd_reqs.empty())
-            //    MPI_Waitall(snd_reqs.size(), &snd_reqs.front(), MPI_STATUSES_IGNORE);
-
-
         }
 
         template<int N>
