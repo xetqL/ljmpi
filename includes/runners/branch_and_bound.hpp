@@ -217,7 +217,7 @@ std::vector<LBSolutionPath<N>> Astar_runner(
             MPI_Barrier(comm);
 
         }
-
+        if(!rank) std::cout << "QUEUE SIZE="<<queue.size() << std::endl;
         do {
 
             current_node = *queue.begin();                  // Next best node
