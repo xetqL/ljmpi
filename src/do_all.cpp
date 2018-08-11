@@ -133,8 +133,7 @@ int main(int argc, char **argv) {
             case 5: //custom various density
                 condition = new initial_condition::lennard_jones::RejectionCondition<DIMENSION>(
                         &(mesh_data.els), params.sig_lj, params.sig_lj * params.sig_lj, params.T0, 0, 0, 0,
-                        params.simsize, params.simsize, params.simsize
-                );
+                        params.simsize, params.simsize, params.simsize);
                 NB_CLUSTERS = 2;
                 clusters.resize(NB_CLUSTERS);
                 std::fill(clusters.begin(), clusters.end(), params.npart / 4);

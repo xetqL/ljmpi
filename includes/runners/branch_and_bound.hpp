@@ -93,8 +93,12 @@ std::vector<LBSolutionPath<N>> Astar_runner(
     std::unordered_map<long long, std::unique_ptr<std::vector<elements::Element<N> > > > plklist;
     std::multiset<std::shared_ptr<LBNode<N> >, Compare<MESH_DATA<N>, Domain<N>> > queue;
 
+    //std::shared_ptr<SlidingWindow<double>> window_gini_times, window_gini_complexities, window_times, window_gini_communications;
     std::shared_ptr<SlidingWindow<double>>
-            window_gini_times, window_gini_complexities, window_times, window_gini_communications;
+            window_gini_times = std::make_shared<SlidingWindow<double>>(params->npframe / 2),
+            window_gini_complexities = std::make_shared<SlidingWindow<double>>(params->npframe / 2),
+            window_times = std::make_shared<SlidingWindow<double>>(params->npframe / 2),
+            window_gini_communications = std::make_shared<SlidingWindow<double>>(params->npframe / 2);
 
     std::vector<double>
             dataset_entry(N_FEATURES + N_LABEL),
@@ -125,10 +129,10 @@ std::vector<LBSolutionPath<N>> Astar_runner(
         for(std::shared_ptr<LBNode<N> >& child : children) {
             if(!child) continue;
 
-            window_gini_times = child->window_gini_times;
+            /*window_gini_times = child->window_gini_times;
             window_gini_complexities = child->window_gini_complexities;
             window_times = child->window_times;
-            window_gini_communications = child->window_gini_communications;
+            window_gini_communications = child->window_gini_communications;*/
 
             mesh_data = &child->mesh_data;
             domain_boundaries = child->domain;
@@ -175,6 +179,7 @@ std::vector<LBSolutionPath<N>> Astar_runner(
                         for (int i = 0; i < npframe; ++i) {
                             MPI_Barrier(comm);
                             const double __start = MPI_Wtime();
+
                             load_balancing::geometric::migrate_particles<N>(mesh_data->els, domain_boundaries, datatype, comm);
 
                             MPI_Barrier(comm);
