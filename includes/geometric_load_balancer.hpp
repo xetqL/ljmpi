@@ -247,7 +247,7 @@ namespace load_balancing {
                 }
             }
 
-            std::vector<MPI_Request> reqs(neighbors.size()), snd_reqs, rcv_reqs;
+            std::vector<MPI_Request> reqs, snd_reqs, rcv_reqs;
             std::vector<MPI_Status> statuses(neighbors.size());
             int cpt = 0, nb_neighbors = neighbors.size();
             nb_elements_sent = 0;
@@ -282,15 +282,17 @@ namespace load_balancing {
                 if(!flag) MPI_Cancel(&req);
             }
             rcv_reqs.clear();
-            int nb_sending_neighbors = std::count_if(receive_data_size_lookup.cbegin(),
+            auto nb_sending_neighbors = std::count_if(receive_data_size_lookup.cbegin(),
                     receive_data_size_lookup.cend(), [](std::pair<int,int> pe_data){return pe_data.second > 0;});
 // endof
 
             for(const size_t &neighbor_idx : neighbors) {   //give all my data to neighbors
                 int send_size = data_to_migrate.at(neighbor_idx).size();
                 if(send_size) {
+                    MPI_Request req;
                     nb_elements_sent += send_size;
-                    MPI_Isend(&data_to_migrate.at(neighbor_idx).front(), send_size, datatype.elements_datatype, neighbor_idx, 200, LB_COMM, &reqs[cpt]);
+                    MPI_Isend(&data_to_migrate.at(neighbor_idx).front(), send_size, datatype.elements_datatype, neighbor_idx, 200, LB_COMM, &req);
+                    reqs.push_back(req);
                     cpt++;
                 }
             }
@@ -306,7 +308,8 @@ namespace load_balancing {
                 std::move(buffer.begin(), buffer.end(), std::back_inserter(remote_data_gathered));
                 cpt++;
             }
-            MPI_Waitall(reqs.size(), &reqs.front(), MPI_STATUSES_IGNORE); //less strict than mpi_barrier
+            if(reqs.size())
+                MPI_Waitall(reqs.size(), &reqs.front(), MPI_STATUSES_IGNORE); //less strict than mpi_barrier
             MPI_Barrier(LB_COMM);
             nb_elements_recv = remote_data_gathered.size();
             return remote_data_gathered;
