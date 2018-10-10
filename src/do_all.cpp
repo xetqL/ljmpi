@@ -87,9 +87,9 @@ int main(int argc, char **argv) {
                 = std::to_string(params.npart) + "-" +
                   std::to_string(params.particle_init_conf) + "-" +
                   std::to_string(params.simsize) + ".particles";
-        if(file_exists(IMPORT_FILENAME)) {
+        if (file_exists(IMPORT_FILENAME)) {
             std::cout << "importing from file ..." << std::endl;
-            elements::import_from_file<DIMENSION, elements::ElementRealType >(IMPORT_FILENAME, mesh_data.els);
+            elements::import_from_file<DIMENSION, elements::ElementRealType>(IMPORT_FILENAME, mesh_data.els);
             std::cout << "Done !" << std::endl;
         } else {
             std::cout << "Generating data ..." << std::endl;
@@ -183,168 +183,153 @@ int main(int argc, char **argv) {
 
     original_data = mesh_data; //copy data elsewhere for future use
     std::shared_ptr<decision_making::Policy> lb_policy;
-    const std::string RESULT_FILENAME = SIMULATION_STR_NAME+".result";
+    const std::string RESULT_FILENAME = SIMULATION_STR_NAME + ".result";
     const std::string DATASET_FILENAME = SIMULATION_STR_NAME + ".dataset";
     Zoltan_Struct *zz;
-    for (unsigned int lb_policy_idx = 1 /* skip the no lb ... */ ; lb_policy_idx <= 4  ; ++lb_policy_idx) {
-        mesh_data = original_data; //recover data from the clean copy
-        switch (lb_policy_idx) {
-            case 0:
-                lb_policy = std::make_shared<decision_making::NoLBPolicy>();
-                break;
-            case 1:
-                lb_policy = std::make_shared<decision_making::PeriodicPolicy>(25);
-                break;
-            case 2://load the file created above
-                lb_policy = std::make_shared<decision_making::PeriodicPolicy>(100);
-                break;
-            case 3:
-                lb_policy = std::make_shared<decision_making::RandomPolicy>(0.1, params.seed);
-                break;
-            case 4://TODO: threshold should be a parameter
-                lb_policy = std::make_shared<decision_making::ThresholdHeuristicPolicy>(0.3);
-                break;
-            case 5://load the file created above
-                lb_policy = std::make_shared<decision_making::InFilePolicy>(
-                        DATASET_FILENAME, params.nframes, params.npframe);
-                break;
-            case 6://neural net policy
-                mlpack::math::RandomSeed(params.seed);
-                lb_policy = std::make_shared<decision_making::NeuralNetworkPolicy>(DATASET_FILENAME, 0);
-                break;
-            default:
-                throw std::runtime_error("unknown lb policy");
+    {
+        for (unsigned int lb_policy_idx = 1 /* skip the no lb ... */ ; lb_policy_idx <= 4; ++lb_policy_idx) {
+            mesh_data = original_data; //recover data from the clean copy
+            switch (lb_policy_idx) {
+                case 0:
+                    lb_policy = std::make_shared<decision_making::NoLBPolicy>();
+                    break;
+                case 1:
+                    lb_policy = std::make_shared<decision_making::PeriodicPolicy>(25);
+                    break;
+                case 2://load the file created above
+                    lb_policy = std::make_shared<decision_making::PeriodicPolicy>(100);
+                    break;
+                case 3:
+                    lb_policy = std::make_shared<decision_making::RandomPolicy>(0.1, params.seed);
+                    break;
+                case 4://TODO: threshold should be a parameter
+                    lb_policy = std::make_shared<decision_making::ThresholdHeuristicPolicy>(0.3);
+                    break;
+                case 5://load the file created above
+                    lb_policy = std::make_shared<decision_making::InFilePolicy>(
+                            DATASET_FILENAME, params.nframes, params.npframe);
+                    break;
+                case 6://neural net policy
+                    mlpack::math::RandomSeed(params.seed);
+                    lb_policy = std::make_shared<decision_making::NeuralNetworkPolicy>(DATASET_FILENAME, 0);
+                    break;
+                default:
+                    throw std::runtime_error("unknown lb policy");
+            }
+
+            if (!rank) lb_policy->print(std::to_string(lb_policy_idx));
+
+            zz = zoltan_create_wrapper(ENABLE_AUTOMATIC_MIGRATION);
+
+            zoltan_load_balance<DIMENSION>(&mesh_data, zz, datatype, MPI_COMM_WORLD, ENABLE_AUTOMATIC_MIGRATION);
+
+            auto time_spent = simulate<DIMENSION>(nullptr, &mesh_data, zz, lb_policy, &params, MPI_COMM_WORLD,
+                                                  ENABLE_AUTOMATIC_MIGRATION);
+
+            if (!rank) {
+                std::ofstream result;
+                result.open(RESULT_FILENAME, std::ofstream::app | std::ofstream::out);
+                std::cout << time_spent << std::endl;
+                result << time_spent << std::endl;
+                result.close();
+            }
+
+            Zoltan_Destroy(&zz);
+            MPI_Barrier(MPI_COMM_WORLD);
         }
-
-        if(!rank) lb_policy->print(std::to_string(lb_policy_idx));
-
-        zz = zoltan_create_wrapper(ENABLE_AUTOMATIC_MIGRATION);
-
-
-        zoltan_fn_init<DIMENSION>(zz, &mesh_data, ENABLE_AUTOMATIC_MIGRATION);
-
-        Zoltan_LB_Partition(zz,                 // input (all remaining fields are output)
-                            &changes,           // 1 if partitioning was changed, 0 otherwise
-                            &numGidEntries,     // Number of integers used for a global ID
-                            &numLidEntries,     // Number of integers used for a local ID
-                            &numImport,         // Number of vertices to be sent to me
-                            &importGlobalGids,  // Global IDs of vertices to be sent to me
-                            &importLocalGids,   // Local IDs of vertices to be sent to me
-                            &importProcs,       // Process rank for source of each incoming vertex
-                            &importToPart,      // New partition for each incoming vertex
-                            &numExport,         // Number of vertices I must send to other processes
-                            &exportGlobalGids,  // Global IDs of the vertices I must send
-                            &exportLocalGids,   // Local IDs of the vertices I must send
-                            &exportProcs,       // Process to which I send each of the vertices
-                            &exportToPart);     // Partition to which each vertex will belong
-
-        Zoltan_LB_Free_Part(&importGlobalGids, &importLocalGids, &importProcs, &importToPart);
-        Zoltan_LB_Free_Part(&exportGlobalGids, &exportLocalGids, &exportProcs, &exportToPart);
-
-        auto time_spent = simulate<DIMENSION>(nullptr, &mesh_data, zz,  lb_policy, &params, MPI_COMM_WORLD, ENABLE_AUTOMATIC_MIGRATION);
-
-        if (!rank) {
-            std::ofstream result;
-            result.open(RESULT_FILENAME, std::ofstream::app | std::ofstream::out);
-            std::cout << time_spent << std::endl;
-            result << time_spent << std::endl;
-            result.close();
-        }
-
-        Zoltan_Destroy(&zz);
-        MPI_Barrier(MPI_COMM_WORLD);
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////FINISHED PARITCLE INITIALIZATION///////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    zz = zoltan_create_wrapper(ENABLE_AUTOMATIC_MIGRATION);
 
-    zoltan_load_balance<DIMENSION>(&mesh_data, zz, datatype, MPI_COMM_WORLD, ENABLE_AUTOMATIC_MIGRATION);
+    {
+        zz = zoltan_create_wrapper(ENABLE_AUTOMATIC_MIGRATION);
+        zoltan_load_balance<DIMENSION>(&mesh_data, zz, datatype, MPI_COMM_WORLD, ENABLE_AUTOMATIC_MIGRATION);
 
-    if (!rank) std::cout << "Run A* simulation to get optimal path..." << std::endl;
-    auto astar_optimal_paths = Astar_runner<DIMENSION>(&mesh_data, zz, &params, MPI_COMM_WORLD, ENABLE_AUTOMATIC_MIGRATION);
+        if (!rank) std::cout << "Run A* simulation to get optimal path..." << std::endl;
+        auto astar_optimal_paths = Astar_runner<DIMENSION>(&mesh_data, zz, &params, MPI_COMM_WORLD, ENABLE_AUTOMATIC_MIGRATION);
 
-    std::ofstream dataset;
-    if (!rank && file_exists(DATASET_FILENAME)) std::remove(DATASET_FILENAME.c_str());
+        std::ofstream dataset;
+        if (!rank && file_exists(DATASET_FILENAME)) std::remove(DATASET_FILENAME.c_str());
 
-    size_t sol_idx = 0;
-    for (auto const& solution : astar_optimal_paths) {
-        if (!rank){
-            std::cout << "Solution ("<<sol_idx<<"):" << std::endl;
-            for(auto const& node : solution){
-                if(node->type == NodeType::Computing)
-                    std::cout << std::setprecision(10) << "frame time: " << node->get_node_cost() << " ? "<< (node->decision==NodeLBDecision::LoadBalance ? "1" : "0") << std::endl;
+        size_t sol_idx = 0;
+        for (auto const& solution : astar_optimal_paths) {
+            if (!rank){
+                std::cout << "Solution ("<<sol_idx<<"):" << std::endl;
+                for(auto const& node : solution){
+                    if(node->type == NodeType::Computing)
+                        std::cout << std::setprecision(10) << "frame time: " << node->get_node_cost() << " ? "<< (node->decision==NodeLBDecision::LoadBalance ? "1" : "0") << std::endl;
+                }
+                arma::mat feat, target;
+                std::tie(feat, target) = to_armadillo_mat(solution, 13);
+                feat.save(DATASET_FILENAME+"-features-"+std::to_string(sol_idx)+".mat", arma::raw_ascii);
+                target.save(DATASET_FILENAME+"-targets-"+std::to_string(sol_idx)+".mat", arma::raw_ascii);
             }
-            arma::mat feat, target;
-            std::tie(feat, target) = to_armadillo_mat(solution, 13);
-            feat.save(DATASET_FILENAME+"-features-"+std::to_string(sol_idx)+".mat", arma::raw_ascii);
-            target.save(DATASET_FILENAME+"-targets-"+std::to_string(sol_idx)+".mat", arma::raw_ascii);
+            metric::io::write_dataset(dataset, DATASET_FILENAME, solution, rank, (*(std::next(solution.end(), -1)))->cost());
+            sol_idx++;
         }
-        metric::io::write_dataset(dataset, DATASET_FILENAME, solution, rank, (*(std::next(solution.end(), -1)))->cost());
-        sol_idx++;
+        Zoltan_Destroy(&zz);
+        MPI_Barrier(MPI_COMM_WORLD);
     }
-
-    astar_optimal_paths = {}; // free memory
-    MPI_Barrier(MPI_COMM_WORLD);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////FINISHED A* COMPUTATION, START COMPARISON WITH HEURISTICS//////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     if (!rank) std::cout << "Start to compare best path with heuristics..." << std::endl;
+    if(!rank && file_exists(RESULT_FILENAME)) std::remove(RESULT_FILENAME.c_str());
 
-    if(!rank && file_exists(RESULT_FILENAME)) {
-        std::remove(RESULT_FILENAME.c_str());
-    }
-    for (unsigned int lb_policy_idx = 5 /* skip the no lb ... */ ; lb_policy_idx <= 6  ; ++lb_policy_idx) {
-        mesh_data = original_data; //recover data from the clean copy
-        switch (lb_policy_idx) {
-            case 0:
-                lb_policy = std::make_shared<decision_making::NoLBPolicy>();
-                break;
-            case 1:
-                lb_policy = std::make_shared<decision_making::PeriodicPolicy>(25);
-                break;
-            case 2://load the file created above
-                lb_policy = std::make_shared<decision_making::PeriodicPolicy>(100);
-                break;
-            case 3:
-                lb_policy = std::make_shared<decision_making::RandomPolicy>(0.1, params.seed);
-                break;
-            case 4://TODO: threshold should be a parameter
-                lb_policy = std::make_shared<decision_making::ThresholdHeuristicPolicy>(0.3);
-                break;
-            case 5://load the file created above
-                lb_policy = std::make_shared<decision_making::InFilePolicy>(
-                        DATASET_FILENAME, params.nframes, params.npframe);
-                break;
-            case 6://neural net policy
-                mlpack::math::RandomSeed(params.seed);
-                lb_policy = std::make_shared<decision_making::NeuralNetworkPolicy>(DATASET_FILENAME, 0);
-                break;
-            default:
-                throw std::runtime_error("unknown lb policy");
+    {
+        for (unsigned int lb_policy_idx = 5 /* skip the no lb ... */ ; lb_policy_idx <= 6  ; ++lb_policy_idx) {
+            mesh_data = original_data; //recover data from the clean copy
+            switch (lb_policy_idx) {
+                case 0:
+                    lb_policy = std::make_shared<decision_making::NoLBPolicy>();
+                    break;
+                case 1:
+                    lb_policy = std::make_shared<decision_making::PeriodicPolicy>(25);
+                    break;
+                case 2://load the file created above
+                    lb_policy = std::make_shared<decision_making::PeriodicPolicy>(100);
+                    break;
+                case 3:
+                    lb_policy = std::make_shared<decision_making::RandomPolicy>(0.1, params.seed);
+                    break;
+                case 4://TODO: threshold should be a parameter
+                    lb_policy = std::make_shared<decision_making::ThresholdHeuristicPolicy>(0.3);
+                    break;
+                case 5://load the file created above
+                    lb_policy = std::make_shared<decision_making::InFilePolicy>(
+                            DATASET_FILENAME, params.nframes, params.npframe);
+                    break;
+                case 6://neural net policy
+                    mlpack::math::RandomSeed(params.seed);
+                    lb_policy = std::make_shared<decision_making::NeuralNetworkPolicy>(DATASET_FILENAME, 0);
+                    break;
+                default:
+                    throw std::runtime_error("unknown lb policy");
+            }
+
+            if(!rank) lb_policy->print(std::to_string(lb_policy_idx));
+
+            zz = zoltan_create_wrapper(ENABLE_AUTOMATIC_MIGRATION);
+
+            zoltan_load_balance<DIMENSION>(&mesh_data, zz, datatype, MPI_COMM_WORLD, ENABLE_AUTOMATIC_MIGRATION);
+
+            auto time_spent = simulate<DIMENSION>(nullptr, &mesh_data, zz,  lb_policy, &params, MPI_COMM_WORLD, ENABLE_AUTOMATIC_MIGRATION);
+
+            if (!rank) {
+                std::ofstream result;
+                result.open(RESULT_FILENAME, std::ofstream::app | std::ofstream::out);
+                std::cout << time_spent << std::endl;
+                result << time_spent << std::endl;
+                result.close();
+            }
+
+            Zoltan_Destroy(&zz);
+            MPI_Barrier(MPI_COMM_WORLD);
         }
-
-        if(!rank) lb_policy->print(std::to_string(lb_policy_idx));
-
-        zz = zoltan_create_wrapper(ENABLE_AUTOMATIC_MIGRATION);
-
-        zoltan_load_balance<DIMENSION>(&mesh_data, zz, datatype, MPI_COMM_WORLD, ENABLE_AUTOMATIC_MIGRATION);
-
-        auto time_spent = simulate<DIMENSION>(nullptr, &mesh_data, zz,  lb_policy, &params, MPI_COMM_WORLD, ENABLE_AUTOMATIC_MIGRATION);
-
-        if (!rank) {
-            std::ofstream result;
-            result.open(RESULT_FILENAME, std::ofstream::app | std::ofstream::out);
-            std::cout << time_spent << std::endl;
-            result << time_spent << std::endl;
-            result.close();
-        }
-
-        Zoltan_Destroy(&zz);
-        MPI_Barrier(MPI_COMM_WORLD);
     }
 
     MPI_Finalize();
