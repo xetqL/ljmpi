@@ -419,20 +419,19 @@ inline std::tuple<int, int, int> compute_one_step(
     /**!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       * WE HAVE TO REMOVE THIS AFTER TESTS!!!!!
       * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
+    float ff = 1.0;
     if(step >= 0) {
         // freeze after T/3 !
-        if(step > params->nframes / 3){
-            params->frozen_factor *= 0.9;
-            //std::cout << "ff is " << params->frozen_factor << std::endl;
-        } if(step < 2*params->nframes / 3)
-            params->frozen_factor = 0.0;
-        else
-            params->frozen_factor = 1.0;
+        if(step > params->nframes / 3)
+            ff = std::pow(0.9, step - (int) (params->nframes / 3));
+
+        if(step > 2*params->nframes / 3)
+            ff = 0.0;
     }
     /// IT STOPS HERE
 
     leapfrog2(dt, mesh_data->els);
-    leapfrog1(dt, mesh_data->els, 2.5 * params->sig_lj, params->frozen_factor);
+    leapfrog1(dt, mesh_data->els, 2.5 * params->sig_lj, ff);
     apply_reflect(mesh_data->els, params->simsize);
 
     return std::make_tuple(cmplx, received, sent);
