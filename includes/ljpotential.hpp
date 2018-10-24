@@ -417,32 +417,29 @@ inline std::tuple<int, int, int> compute_one_step(
     //remove_untracked_elements(cell_per_row, cut_off_radius, mesh_data->els);
 
     /**!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-     * WE HAVE TO REMOVE THIS AFTER TESTS!!!!!
-     * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
-    /*if(step >= 0) {
-        // freeze after T/2 !
-        if(step > params->nframes / 2) params->frozen_factor = 0.0;
-        else params->frozen_factor = 1.0;
-
-        for (auto &p : mesh_data->els)
-            for (int dim = 0; dim < N; ++dim) {
-                p.velocity[dim] *= params->frozen_factor;
-                //////////////////////////////////////////////////////////////////////////////
-                //p.acceleration[dim] *= 0.0; //cancel all the forces, /!\ to remove after tests
-                //////////////////////////////////////////////////////////////////////////////
-            }
-    }*/
+      * WE HAVE TO REMOVE THIS AFTER TESTS!!!!!
+      * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
+    if(step >= 0) {
+        // freeze after T/3 !
+        if(step > params->nframes / 3){
+            params->frozen_factor *= 0.9;
+            //std::cout << "ff is " << params->frozen_factor << std::endl;
+        } if(step < 2*params->nframes / 3)
+            params->frozen_factor = 0.0;
+        else
+            params->frozen_factor = 1.0;
+    }
     /// IT STOPS HERE
 
     leapfrog2(dt, mesh_data->els);
-    leapfrog1(dt, mesh_data->els, 2.5 * params->sig_lj);
+    leapfrog1(dt, mesh_data->els, 2.5 * params->sig_lj, params->frozen_factor);
     apply_reflect(mesh_data->els, params->simsize);
 
     return std::make_tuple(cmplx, received, sent);
 };
 
 template <int N>
-inline std::tuple<int, int, int> compute_one_step(
+inline std::tuple<int, int, int> __compute_one_step(
         MESH_DATA<N>* mesh_data,
         std::unordered_map<long long, std::unique_ptr<std::vector<elements::Element<N> > > >& plklist,
         const std::vector<partitioning::geometric::Domain<N>>& domain_boundaries,
@@ -476,23 +473,19 @@ inline std::tuple<int, int, int> compute_one_step(
     /**!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      * WE HAVE TO REMOVE THIS AFTER TESTS!!!!!
      * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
-    /*if(step >= 0) {
-        // freeze after T/2 !
-        if(step > params->nframes / 2) params->frozen_factor = 0.0;
-        else params->frozen_factor = 1.0;
-
-        for (auto &p : mesh_data->els)
-            for (int dim = 0; dim < N; ++dim) {
-                p.velocity[dim] *= params->frozen_factor;
-                //////////////////////////////////////////////////////////////////////////////
-                p.acceleration[dim] *= 0.0; //cancel all the forces, /!\ to remove after tests
-                //////////////////////////////////////////////////////////////////////////////
-            }
-    }*/
+    if(step >= 0) {
+        // freeze after T/3 !
+        if(step > params->nframes / 3){
+            params->frozen_factor *= 0.9;
+            std::cout << "ff is " << params->frozen_factor << std::endl;
+        }
+        else
+            params->frozen_factor = 1.0;
+    }
     /// IT STOPS HERE
 
     leapfrog2(dt, mesh_data->els);
-    leapfrog1(dt, mesh_data->els);
+    leapfrog1(dt, mesh_data->els, params->frozen_factor);
     apply_reflect(mesh_data->els, params->simsize);
 
     return std::make_tuple(cmplx, received, sent);

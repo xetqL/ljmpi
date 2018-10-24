@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
         MPI_Finalize();
         return -1;
     }
-
+    float tmp_ff = 1.0;
     params.world_size = (unsigned int) nproc;
 
     //Define the output simulation name
@@ -116,6 +116,7 @@ int main(int argc, char **argv) {
 
     const std::string DATASET_FILENAME = SIMULATION_STR_NAME + ".dataset";
     {
+        params.frozen_factor = tmp_ff;
         auto zz = zoltan_create_wrapper(ENABLE_AUTOMATIC_MIGRATION);
 
         zoltan_load_balance<DIMENSION>(&mesh_data, zz, datatype, MPI_COMM_WORLD, ENABLE_AUTOMATIC_MIGRATION);
@@ -162,6 +163,7 @@ int main(int argc, char **argv) {
     }
     for (unsigned int lb_policy_idx = 1 /* skip the no lb ... */ ; lb_policy_idx <= 6  ; ++lb_policy_idx) {
         mesh_data = original_data; //recover data from the clean copy
+        params.frozen_factor = tmp_ff;
 
         switch (lb_policy_idx) {
             case 0:

@@ -34,7 +34,7 @@ RealType compute_LJ_scalar(RealType r2, RealType eps, RealType sig2) {
 }
 
 template<typename RealType>
-void leapfrog1(int n, RealType dt, RealType* x, RealType* v, RealType* a) {
+void __leapfrog1(int n, RealType dt, RealType* x, RealType* v, RealType* a) {
     for (int i = 0; i < n; ++i, x += 2, v += 2, a += 2) {
         v[0] += a[0] * dt / 2;
         v[1] += a[1] * dt / 2;
@@ -53,9 +53,9 @@ void leapfrog1(const double dt, std::vector<elements::Element<N>> &elements, dou
              * Let say that particles are so close that they produce so much force on them such that the timestep
              * is too big to prevent them to cross the min radius. If a particle cross the min radius of another one
              * it creates an almost infinity repulsive force that breaks everything. In real life, this should not
-             * happen because*/
+             * happen because life is supposed to be continuous (planck distance)*/
             if(std::abs(el.velocity.at(dim) * dt) >= cut_off ) {
-                el.velocity[dim] = 0.9 * cut_off / dt; //max speed is 90% of cutoff per timestep
+                el.velocity[dim] = (0.9 * cut_off / dt) * ff; //max speed is 90% of cutoff per timestep
             }
             el.position[dim] += el.velocity.at(dim) * dt;
 
