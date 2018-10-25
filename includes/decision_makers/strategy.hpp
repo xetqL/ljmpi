@@ -121,7 +121,7 @@ namespace decision_making {
     public:
         PeriodicPolicy(int period) : period(period) {}
         virtual inline bool should_load_balance(int it, std::unique_ptr<metric::LBMetrics<double>> mc) override {
-            return (it % period) == 0;
+            return (it % period) == 0 && it > 0;
         }
         void print(std::string prefix) override {
             Policy::print(prefix);

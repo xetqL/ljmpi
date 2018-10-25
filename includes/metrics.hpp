@@ -328,13 +328,6 @@ all_compute_metrics(std::shared_ptr<SlidingWindow<RealType>> window_times,
     else
         MPI_Allgather(&mu_interaction_time, 1, MPI_DOUBLE, &mu_interaction_times.front(), 1, MPI_DOUBLE, comm);
 
-#ifdef DEBUG
-    if(!rank) {
-        std::cout << fsent << std::endl;
-        std::for_each(communications.begin(), communications.end(), [](auto const& el){std::cout << (int) el << " ";});
-    }
-#endif
-
     RealType gini_times = load_balancing::compute_gini_index(times);
     RealType gini_complexities   = load_balancing::compute_gini_index(complexities);
     RealType gini_communications = load_balancing::compute_gini_index(communications);

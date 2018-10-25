@@ -103,7 +103,7 @@ std::vector<LBSolutionPath<N>> Astar_runner(
             times(nproc), optimal_frame_time_lookup_table(nframes);
 
     std::vector<bool> tried_to_load_balance(nframes, false);
-
+    zoltan_load_balance<N>(&mesh_data, load_balancer, datatype, comm, automatic_migration);
     std::shared_ptr<LBNode<N> > current_node = std::make_shared<LBNode<N>>(load_balancer, params->npframe), solution;
     std::vector<std::shared_ptr<LBNode<N> > > solutions;
 

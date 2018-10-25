@@ -94,6 +94,9 @@ double simulate(FILE *fp,          // Output file (at 0)
             double begin = MPI_Wtime(); //start of step
             bool should_load_balance_now = lb_policy->should_load_balance(i + frame * npframe, std::move(a));
             if (should_load_balance_now) {
+#ifdef DEBUG
+                if(!rank) std::cout << i + frame * npframe << std::endl;
+#endif
                 zoltan_load_balance<N>(mesh_data, load_balancer, datatype, comm, automatic_migration);
                 nb_lb ++;
             } else {
