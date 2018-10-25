@@ -83,6 +83,7 @@ double simulate(FILE *fp,          // Output file (at 0)
     int complexity, received, sent;
     std::vector<double> previous_dataset_entry(13), current_dataset_entry(13), last_positive_dataset_entry(13);
 
+    zoltan_load_balance<N>(mesh_data, load_balancer, datatype, comm, automatic_migration);
     for (int frame = 0; frame < nframes; ++frame) {
         double frame_time = 0.0;
         for (int i = 0; i < npframe; ++i) {
