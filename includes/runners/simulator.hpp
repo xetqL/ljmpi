@@ -82,6 +82,7 @@ double simulate(FILE *fp,          // Output file (at 0)
     double total_time = 0.0;
     int complexity, received, sent;
     std::vector<double> previous_dataset_entry(13), current_dataset_entry(13), last_positive_dataset_entry(13);
+
     for (int frame = 0; frame < nframes; ++frame) {
         double frame_time = 0.0;
         for (int i = 0; i < npframe; ++i) {
@@ -92,7 +93,7 @@ double simulate(FILE *fp,          // Output file (at 0)
             double begin = MPI_Wtime(); //start of step
             bool should_load_balance_now = lb_policy->should_load_balance(i + frame * npframe, std::move(a));
             if (should_load_balance_now) {
-                zoltan_load_balance<N>(mesh_data, domain_boundaries, load_balancer, nproc, params, datatype, comm, automatic_migration);
+                zoltan_load_balance<N>(mesh_data, load_balancer, datatype, comm, automatic_migration);
                 nb_lb ++;
             } else {
                 load_balancing::geometric::zoltan_migrate_particles<N>(mesh_data->els, load_balancer, datatype, comm);
