@@ -75,7 +75,7 @@ void leapfrog1(const elements::ElementRealType dt, std::vector<elements::Element
              * it creates an almost infinity repulsive force that breaks everything. In real life, this should not
              * happen because life is supposed to be continuous (planck distance)*/
             if(std::abs(el.velocity.at(dim) * dt) >= cut_off ) {
-                el.velocity[dim] = (0.001 * cut_off / dt) * ff; //max speed is 90% of cutoff per timestep
+                el.velocity[dim] = (0.9 * cut_off / dt) * ff; //max speed is 90% of cutoff per timestep
             }
             el.position[dim] += el.velocity.at(dim) * dt;
 

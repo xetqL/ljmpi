@@ -424,6 +424,7 @@ inline std::tuple<int, int, int> compute_one_step(
         // freeze after T/3 !
         if(step > params->nframes*params->npframe / 3)
             ff = std::pow(params->frozen_factor,  step - params->nframes*params->npframe / 3);
+        if(ff < 0.2) ff = 0.0;
     }
     /// IT STOPS HERE
 
