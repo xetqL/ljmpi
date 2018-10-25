@@ -101,7 +101,7 @@ double simulate(FILE *fp,          // Output file (at 0)
             //everybody've finished communications
             MPI_Barrier(comm);
             //everybody computes a step
-            auto computation_info = lennard_jones::compute_one_step<N>(mesh_data, plklist, load_balancer, datatype, params, comm, frame);
+            auto computation_info = lennard_jones::compute_one_step<N>(mesh_data, plklist, load_balancer, datatype, params, comm, frame * npframe + i);
 
             double end = MPI_Wtime();// End of step
             //compute my own time

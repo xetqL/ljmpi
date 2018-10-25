@@ -17,7 +17,7 @@
 
 namespace elements {
 
-    using ElementRealType = float;
+    using ElementRealType = double;
     using Point3D = boost::geometry::model::point<ElementRealType, 3, boost::geometry::cs::cartesian>;
     using Box3D = boost::geometry::model::box<Point3D>;
 

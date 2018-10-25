@@ -164,7 +164,7 @@ std::vector<LBSolutionPath<N>> Astar_runner(
                             load_balancing::geometric::zoltan_migrate_particles<N>(mesh_data.els, child->lb, datatype, comm);
                             MPI_Barrier(comm);
                             computation_info = lennard_jones::compute_one_step<N>(&mesh_data, plklist, child->lb, datatype,
-                                                                                  params, comm, frame);
+                                                                                  params, comm, frame*npframe + i);
                             my_iteration_time = MPI_Wtime() - it_start;
                             std::tie(complexity, received, sent) = computation_info;
                             MPI_Allgather(&my_iteration_time, 1, MPI_DOUBLE, &times.front(), 1, MPI_DOUBLE, comm);

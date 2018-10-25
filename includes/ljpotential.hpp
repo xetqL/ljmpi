@@ -383,6 +383,7 @@ void compute_forces(
     }
 }
 
+#include <cmath>
 template <int N>
 inline std::tuple<int, int, int> compute_one_step(
         MESH_DATA<N>* mesh_data,
@@ -415,18 +416,14 @@ inline std::tuple<int, int, int> compute_one_step(
     int cmplx = lennard_jones::compute_forces(cell_per_row, cut_off_radius, mesh_data->els, remote_el, plklist, params);
 
     //remove_untracked_elements(cell_per_row, cut_off_radius, mesh_data->els);
-
     /**!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       * WE HAVE TO REMOVE THIS AFTER TESTS!!!!!
       * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
-    float ff = 1.0;
+    elements::ElementRealType ff = 1.0;
     if(step >= 0) {
         // freeze after T/3 !
-        if(step > params->nframes / 3)
-            ff = std::pow(0.9, step - (int) (params->nframes / 3));
-
-        if(step > 2*params->nframes / 3)
-            ff = 0.0;
+        if(step > params->nframes*params->npframe / 3)
+            ff = std::pow(params->frozen_factor,  step - params->nframes*params->npframe / 3);
     }
     /// IT STOPS HERE
 
@@ -437,6 +434,7 @@ inline std::tuple<int, int, int> compute_one_step(
     return std::make_tuple(cmplx, received, sent);
 };
 
+//DEPRECATED
 template <int N>
 inline std::tuple<int, int, int> __compute_one_step(
         MESH_DATA<N>* mesh_data,
@@ -445,7 +443,7 @@ inline std::tuple<int, int, int> __compute_one_step(
         const partitioning::CommunicationDatatype& datatype,
         sim_param_t* params,
         const MPI_Comm comm,
-        const int step = -1 /* by default we don't care about the step*/ ) {
+        const int step = -1 /*by default we don't care about the step*/ ) {
 
     int received, sent;
 
