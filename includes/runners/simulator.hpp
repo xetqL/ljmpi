@@ -107,6 +107,7 @@ std::tuple<ApplicationTime, CumulativeLoadImbalanceHistory, Decisions, TimeHisto
             START_TIMER(it_compute_time);
             complexity += lj::compute_one_step<N>(mesh_data->els, remote_el, getPosPtrFunc, getVelPtrFunc, &head, &lscl, bbox,  getForceFunc, borders, params);
             END_TIMER(it_compute_time);
+
             // Measure load imbalance
             MPI_Allreduce(&it_compute_time, probe->max_it_time(), 1, MPI_TIME, MPI_MAX, comm);
             MPI_Allreduce(&it_compute_time, probe->min_it_time(), 1, MPI_TIME, MPI_MIN, comm);
@@ -150,13 +151,15 @@ std::tuple<ApplicationTime, CumulativeLoadImbalanceHistory, Decisions, TimeHisto
             comp_time += it_compute_time;
             probe->next_iteration();
         }
-        MPI_Allreduce(MPI_IN_PLACE, &comp_time, 1, MPI_TIME, MPI_MAX, MPI_COMM_WORLD);
-        if(!rank) std::cout << comp_time << std::endl;
-        app_time += comp_time;
+
+        probe->batch_time = comp_time;
+        if(!rank) std::cout << probe->batch_time << std::endl;
+
+        app_time += probe->batch_time;
 
         // Write metrics to report file
         if (params->record) {
-            time_logger->info("{:0.6f}", comp_time);
+            time_logger->info("{:0.6f}", probe->batch_time);
             cmplx_logger->info("{}", complexity);
 
             if(frame % 5 == 0) { time_logger->flush(); cmplx_logger->flush(); }
@@ -174,7 +177,7 @@ std::tuple<ApplicationTime, CumulativeLoadImbalanceHistory, Decisions, TimeHisto
             }
         }
 
-        my_frame_times[frame] = comp_time;
+        my_frame_times[frame] = probe->batch_time;
         my_frame_cmplx[frame] = complexity;
     }
 

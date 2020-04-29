@@ -167,6 +167,7 @@ class Probe {
     bool balanced = true;
     int i = 0, nproc;
 public:
+    Time batch_time;
     Probe(int nproc) : nproc(nproc) {}
 
     void  update_cumulative_imbalance_time() { cumulative_imbalance_time += max_it - sum_it/nproc; }

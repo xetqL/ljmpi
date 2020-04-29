@@ -275,9 +275,9 @@ int main(int argc, char** argv) {
                 Real epsilon_c = probe.get_efficiency();
                 Real epsilon_lb= probe.compute_avg_lb_parallel_efficiency(); //estimation based on previous lb call
                 Real S         = epsilon_c / epsilon_lb;
-                Real tau_prime = probe.get_max_it() *  S + probe.compute_avg_lb_time(); //estimation of next iteration time based on speed up + LB cost
-                Real tau       = probe.get_max_it();
-                return is_new_batch && (tau_prime < tau);
+                Real tau_prime = probe.batch_time *  S + probe.compute_avg_lb_time(); //estimation of next iteration time based on speed up + LB cost
+                Real tau       = probe.batch_time;
+                return is_new_batch && (tau_prime < 0.9f * tau);
             });
 
         auto [t, cum, dec, thist] = simulate<N>(zlb, &mesh_data, std::move(procassini_criterion_policy), fWrapper, &params, &probe, datatype, APP_COMM, "procassini_");
